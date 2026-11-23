@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}نانوایی‌ها | سامانه رزرو نان{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='leaflet/leaflet.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="map-container">
+    <div id="map" dir="ltr"></div>
+
+    <div class="map-tools">
+        <div class="location-btn" id="locateBtn" title="موقعیت من">📍</div>
+    </div>
+
+    <div class="bottom-sheet" id="bottomSheet">
+        <div class="bottom-sheet-handle" id="sheetHandle"></div>
+
+        <div class="sheet-toolbar">
+            <h3>نانوایی‌های نزدیک شما</h3>
+        </div>
+
+        <div class="filter-bar">
+            <select id="filterType" class="filter-select">
+                <option value="all">همه</option>
+                <option value="share">سهمیه‌ای</option>
+                <option value="free">آزاد</option>
+            </select>
+            <select id="filterOpen" class="filter-select">
+                <option value="all">باز و بسته</option>
+                <option value="open">باز</option>
+                <option value="closed">بسته</option>
+            </select>
+            <select id="filterCapacity" class="filter-select">
+                <option value="all">هر ظرفیتی</option>
+                <option value="available">دارای ظرفیت</option>
+                <option value="full">تکمیل</option>
+            </select>
+        </div>
+
+        <div id="bakeriesList" class="bakeries-list">
+            <p class="loading">در حال بارگذاری...</p>
+        </div>
+    </div>
+
+    <div id="bakeryDetailSheet" class="detail-sheet hidden">
+        <button class="back-btn" id="backToList">← بازگشت</button>
+        <div id="bakeryDetailContent"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='leaflet/leaflet.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        if (typeof initMapApp === 'function') initMapApp();
+    });
+</script>
+{% endblock %}

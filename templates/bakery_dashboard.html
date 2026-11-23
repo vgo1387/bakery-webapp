@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% block title %}داشبورد نانوا | {{ bakery.name }}{% endblock %}
+
+{% block content %}
+<div class="bakery-app">
+    <div class="bakery-app-header">
+        <div>
+            <h1>{{ bakery.name }}</h1>
+            <p class="muted">{{ bakery.address }}</p>
+        </div>
+        <a href="/bakery/logout" class="btn-small">خروج</a>
+    </div>
+
+    <!-- کنترل ظرفیت امروز -->
+    <div class="capacity-panel">
+        <h3>مدیریت امروز ({{ today_jalali }})</h3>
+        <div class="capacity-stats">
+            <div class="stat-box">
+                <span class="stat-num">{{ used }}</span>
+                <span class="stat-label">نوبت گرفته‌شده</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-num">{{ remaining }}</span>
+                <span class="stat-label">ظرفیت باقی‌مانده</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-num">{{ capacity }}</span>
+                <span class="stat-label">ظرفیت روز</span>
+            </div>
+        </div>
+
+        <div class="capacity-controls">
+            <div class="form-group" style="display:flex;align-items:center;gap:0.6rem">
+                <label for="capacityInput" style="margin:0">ظرفیت امروز:</label>
+                <input type="number" id="capacityInput" class="input" value="{{ capacity }}" min="0" style="max-width:120px">
+                <button onclick="saveCapacity()" class="btn-small">ذخیره ظرفیت</button>
+            </div>
+            <div class="accept-toggle">
+                <label class="switch-label">
+                    <input type="checkbox" id="acceptingToggle" {% if accepting %}checked{% endif %} onchange="saveAccepting()">
+                    <span class="accept-text" id="acceptText">{{ 'پذیرش نوبت: باز' if accepting else 'پذیرش نوبت: بسته' }}</span>
+                </label>
+                <p class="muted" id="acceptHint">{{ 'مشتریان می‌توانند نوبت بگیرند.' if accepting else 'وقتی این بسته باشد، نانوایی بسته اعلام می‌شود.' }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- مدیریت ظرفیت روزهای آینده -->
+    <h2 class="section-title">ظرفیت روزهای آینده</h2>
+    <div class="days-manager">
+        {% for d in days %}
+        <div class="day-row {% if d.is_today %}day-today{% endif %}">
+            <div class="day-info">
+                <span class="day-name">{{ d.jalali }}</span>
+                {% if d.is_today %}<span class="today-tag">امروز</span>{% endif %}
+                <span class="muted">رزرو شده: {{ d.used }}</span>
+            </div>
+            <div class="day-controls">
+                <input type="number" class="input day-cap" id="cap-{{ d.date.isoformat() }}" value="{{ d.capacity }}" min="0" max="1000">
+                <label class="switch-label day-accept">
+                    <input type="checkbox" id="acc-{{ d.date.isoformat() }}" {% if d.accepting %}checked{% endif %}>
+                    <span>پذیرش</span>
+                </label>
+                <button class="btn-small" onclick="saveDay('{{ d.date.isoformat() }}')">ذخیره</button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- نوبت‌های امروز -->
+    <h2 class="section-title">نوبت‌های امروز</h2>
+    {% if reservations %}
+    <div class="bakery-reservations">
+        {% for r in reservations %}
+        <div class="bakery-res-card status-{{ r.status }}" id="row-{{ r.code }}">
+            <div class="res-top">
+                <div>
+                    <span class="res-phone" dir="ltr">{{ r.user_phone }}</span>
+                    <span class="res-code" dir="ltr">کد: {{ r.code }}</span>
+                </div>
+                <span class="status-label">{{ {'pending':'در انتظار','ready':'آماده','waiting_confirm':'منتظر تأیید','delivered':'دریافت شده','cancelled':'لغو'}.get(r.status, r.status) }}</span>
+            </div>
+            <div class="res-detail">
+                <span>🍞 {{ r.loaf_count }} عدد {{ r.bread_type }}</span>
+                <span>👜 {{ r.bag_count }} کیسه</span>
+                <span class="delivery-code-box">کد تحویل: <b dir="ltr">{{ r.delivery_code }}</b></span>
+            </div>
+            <div class="res-actions">
+                {% if r.status == 'pending' %}
+                    <button onclick="setStatus('{{ r.code }}','ready')" class="btn-small">آماده شد</button>
+                {% endif %}
+                {% if r.status in ('pending','ready') %}
+                    <button onclick="setStatus('{{ r.code }}','delivered')" class="btn-small">تحویل شد</button>
+                    <button onclick="setStatus('{{ r.code }}','cancelled')" class="btn-small btn-cancel">لغو</button>
+                {% endif %}
+                {% if r.status == 'delivered' %}
+                    <span class="done-text">✔ تحویل ثبت شد</span>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="no-results">امروز هنوز نوبتی ثبت نشده است.</p>
+    {% endif %}
+
+    <!-- جستجوی کد تحویل -->
+    <div class="verify-panel">
+        <h3>بررسی کد تحویل مشتری</h3>
+        <div class="verify-row">
+            <input type="text" id="verifyCode" class="input" placeholder="کد تحویل را وارد کنید" dir="ltr">
+            <button onclick="verifyCode()" class="btn-primary">بررسی</button>
+        </div>
+        <p id="verifyResult" class="error-msg hidden"></p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function saveCapacity() {
+    const capacity = parseInt(document.getElementById('capacityInput').value);
+    if (isNaN(capacity) || capacity < 0) return alert('ظرفیت نامعتبر');
+    const res = await fetch('/api/bakery/settings', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({capacity})
+    });
+    const data = await res.json();
+    if (data.success) { location.reload(); } else { alert(data.error || 'خطا'); }
+}
+async function saveAccepting() {
+    const accepting = document.getElementById('acceptingToggle').checked;
+    const res = await fetch('/api/bakery/settings', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({accepting})
+    });
+    const data = await res.json();
+    if (data.success) { location.reload(); } else { alert(data.error || 'خطا'); }
+}
+async function saveDay(dateStr) {
+    const capacity = parseInt(document.getElementById('cap-' + dateStr).value);
+    const accepting = document.getElementById('acc-' + dateStr).checked;
+    if (isNaN(capacity) || capacity < 0) return alert('ظرفیت نامعتبر');
+    const res = await fetch('/api/bakery/settings', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({date: dateStr, capacity: capacity, accepting: accepting})
+    });
+    const data = await res.json();
+    if (data.success) { alert('ذخیره شد ✔'); location.reload(); } else { alert(data.error || 'خطا'); }
+}
+async function setStatus(code, status) {
+    const res = await fetch('/api/bakery/reservation/' + code + '/status', {
+        method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({status})
+    });
+    const data = await res.json();
+    if (data.success) { location.reload(); } else { alert(data.error || 'خطا'); }
+}
+async function verifyCode() {
+    const delivery_code = document.getElementById('verifyCode').value.trim();
+    const result = document.getElementById('verifyResult');
+    result.classList.add('hidden');
+    const res = await fetch('/api/bakery/verify-code', {
+        method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({delivery_code})
+    });
+    const data = await res.json();
+    if (data.success) {
+        const r = data.reservation;
+        result.textContent = 'کد معتبر است: ' + r.user_phone + ' — ' + r.loaf_count + ' نان ' + r.bread_type;
+        result.classList.remove('hidden');
+        result.style.color = '#28a745';
+    } else {
+        result.textContent = data.error || 'کد نامعتبر';
+        result.classList.remove('hidden');
+        result.style.color = '#dc3545';
+    }
+}
+</script>
+{% endblock %}

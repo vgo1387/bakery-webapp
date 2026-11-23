@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}تأیید نوبت{% endblock %}
+
+{% block content %}
+<div class="confirmation-page">
+    <div class="success-icon">✓</div>
+    <h1>رزرو با موفقیت ثبت شد!</h1>
+
+    <div class="codes-box">
+        <div class="code-item">
+            <p class="code-label">کد رزرو</p>
+            <h2 class="code-value" dir="ltr">{{ r.code }}</h2>
+        </div>
+        <div class="code-item">
+            <p class="code-label">کد تحویل</p>
+            <h2 class="code-value code-delivery" dir="ltr">{{ r.delivery_code }}</h2>
+        </div>
+        <img class="qr-img" src="{{ qr_data }}" alt="QR کد تحویل" width="150" height="150">
+        <p class="code-hint">این QR یا کد تحویل را هنگام مراجعه به نانوایی ارائه دهید.</p>
+    </div>
+
+    <div class="ticket">
+        <h3>{{ bakery.name }}</h3>
+        <div class="ticket-row"><span>تاریخ دریافت</span><strong>{{ r.reservation_date | jalali }}</strong></div>
+        <div class="ticket-row"><span>نوع نان</span><strong>{{ r.bread_type }}</strong></div>
+        <div class="ticket-row"><span>تعداد نان</span><strong>{{ r.loaf_count }}</strong></div>
+        <div class="ticket-row"><span>تعداد کیسه</span><strong>{{ r.bag_count }}</strong></div>
+        <div class="ticket-row total"><span>مبلغ کل</span><strong>{{ '{:,}'.format(r.total_price) }} تومان</strong></div>
+    </div>
+
+    <a href="/" class="btn-primary">بازگشت به صفحه اصلی</a>
+</div>
+{% endblock %}
+

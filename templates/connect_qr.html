@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}اتصال به سامانه{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+    <div class="auth-card" style="text-align:center">
+        <h1>📷 اتصال به سامانه نانوایی</h1>
+        <p class="auth-sub">با گوشی به وای‌فای نانوایی (هات‌اسپات) وصل شوید و این کد را اسکن کنید یا آدرس را تایپ کنید</p>
+
+        <div style="margin:1.2rem auto;display:inline-block;background:#fff;padding:1rem;border-radius:12px;box-shadow:var(--shadow)">
+            <img src="{{ qr }}" alt="QR اتصال" style="width:220px;height:220px;display:block">
+        </div>
+
+        <p dir="ltr" style="font-weight:700;font-size:1.15rem;margin-top:0.6rem">{{ url }}</p>
+
+        {% if ips|length > 1 %}
+        <p class="auth-sub" style="margin-top:0.8rem">آدرس‌های جایگزین:
+            {% for ip in ips %}<span dir="ltr">{{ ip }}</span>{% if not loop.last %} ، {% endif %}{% endfor %}
+        </p>
+        {% endif %}
+
+        <div class="mock-banner" style="margin-top:1rem">
+            اگر کد اسکن نشد: گوشی را به وای‌فای نانوایی وصل کنید و آدرس بالا را در مرورگر گوشی وارد کنید.
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}دریافت نوبت | {{ bakery.name }}{% endblock %}
+
+{% block content %}
+<div class="reserve-page">
+    <div class="reserve-card">
+        <div class="reserve-header">
+            <h1>دریافت نوبت</h1>
+            <p class="reserve-bakery-name">{{ bakery.name }}</p>
+        </div>
+
+        <div class="reserve-summary">
+            <span>قیمت هر نان: {{ '{:,}'.format(bakery.price_per_loaf) }} تومان</span>
+            <span>قیمت کیسه: {{ '{:,}'.format(bakery.price_per_bag) }} تومان</span>
+        </div>
+
+        <div class="form-group">
+            <label for="reservationDate">تاریخ دریافت</label>
+            <input type="date" id="reservationDate" class="input" onchange="checkCapacity()">
+            <small id="capacityMsg" class="capacity-msg"></small>
+        </div>
+
+        <div class="form-group">
+            <label for="breadType">نوع نان</label>
+            <select id="breadType" class="input">
+                <option value="بربری">بربری</option>
+                <option value="سنگک">سنگک</option>
+                <option value="لواش">لواش</option>
+                <option value="تافتون">تافتون</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="loafCount">تعداد نان</label>
+            <input type="number" id="loafCount" class="input" min="1" max="20" value="1" oninput="updateSummary()">
+        </div>
+
+        <div class="form-group">
+            <label for="bagCount">تعداد کیسه</label>
+            <input type="number" id="bagCount" class="input" min="0" max="20" value="0" oninput="updateSummary()">
+        </div>
+
+        <div class="form-group">
+            <label for="userPhone">شماره موبایل</label>
+            <input type="tel" id="userPhone" class="input" placeholder="مثلاً 09123456789" dir="ltr">
+        </div>
+
+        <div id="priceSummary" class="price-summary">
+            مبلغ کل: <strong>0</strong> تومان
+        </div>
+
+        <button onclick="submitReservation('{{ bakery.id }}')" id="submitBtn" class="btn-primary btn-block">تأیید نوبت</button>
+        <p id="errorMsg" class="error-msg hidden"></p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    window._pricePerLoaf = {{ bakery.price_per_loaf }};
+    window._pricePerBag = {{ bakery.price_per_bag }};
+    document.addEventListener('DOMContentLoaded', function () {
+        const today = new Date();
+        const iso = today.toISOString().split('T')[0];
+        const dateInput = document.getElementById('reservationDate');
+        dateInput.min = iso;
+        dateInput.value = iso;
+        updateSummary();
+        checkCapacity();
+    });
+</script>
+{% endblock %}

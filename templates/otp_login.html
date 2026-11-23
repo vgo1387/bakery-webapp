@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}ورود مشتری{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+    <div class="auth-card">
+        <h1>ورود / ثبت‌نام</h1>
+        <p class="auth-sub">برای دریافت نوبت، شماره موبایل خود را وارد کنید.</p>
+
+        <!-- مرحله ۱: شماره -->
+        <div id="stepPhone">
+            <div class="form-group">
+                <label for="loginPhone">شماره موبایل</label>
+                <input type="tel" id="loginPhone" class="input" placeholder="مثلاً 09123456789" dir="ltr">
+            </div>
+            <button onclick="requestOtp()" class="btn-primary btn-block">ارسال کد تأیید</button>
+            <p id="otpError" class="error-msg hidden"></p>
+        </div>
+
+        <!-- مرحله ۲: کد -->
+        <div id="stepCode" class="hidden">
+            <div class="form-group">
+                <label for="loginCode">کد تأیید</label>
+                <input type="text" id="loginCode" class="input" placeholder="کد ۴ رقمی" dir="ltr" maxlength="4">
+            </div>
+            <button onclick="verifyOtp()" class="btn-primary btn-block">ورود</button>
+            <button onclick="showPhoneStep()" class="btn-secondary btn-block" style="margin-top:0.6rem">تغییر شماره</button>
+            <p id="verifyError" class="error-msg hidden"></p>
+        </div>
+
+        {% if mock_notice %}
+        <div class="mock-banner">حالت آزمایشی: کد تأیید در فایل <b>sms_log.txt</b> ذخیره می‌شود.</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showPhoneStep() {
+    document.getElementById('stepPhone').classList.remove('hidden');
+    document.getElementById('stepCode').classList.add('hidden');
+    document.getElementById('otpError').classList.add('hidden');
+}
+async function requestOtp() {
+    const phone = document.getElementById('loginPhone').value.trim();
+    const err = document.getElementById('otpError');
+    if (!/^09\d{9}$/.test(phone)) {
+        err.textContent = 'شماره موبایل معتبر وارد کنید';
+        err.classList.remove('hidden');
+        return;
+    }
+    err.classList.add('hidden');
+    const res = await fetch('/api/otp/request', {
+        method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({phone})
+    });
+    const data = await res.json();
+    if (data.success) {
+        document.getElementById('stepPhone').classList.add('hidden');
+        document.getElementById('stepCode').classList.remove('hidden');
+        document.getElementById('loginCode').focus();
+    } else {
+        err.textContent = data.error || 'خطا در ارسال کد';
+        err.classList.remove('hidden');
+    }
+}
+async function verifyOtp() {
+    const phone = document.getElementById('loginPhone').value.trim();
+    const code = document.getElementById('loginCode').value.trim();
+    const err = document.getElementById('verifyError');
+    err.classList.add('hidden');
+    const res = await fetch('/api/otp/verify', {
+        method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({phone, code})
+    });
+    const data = await res.json();
+    if (data.success) {
+        window.location.href = '/';
+    } else {
+        err.textContent = data.error || 'کد نامعتبر است';
+        err.classList.remove('hidden');
+    }
+}
+</script>
+{% endblock %}

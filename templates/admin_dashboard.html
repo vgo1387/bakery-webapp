@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}داشبورد مدیریت{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+    <div class="admin-header">
+        <h1>پنل مدیریت سامانه</h1>
+        <a href="/admin/logout" class="btn-small">خروج</a>
+    </div>
+
+    <nav class="admin-nav">
+        <a href="/admin" class="active">داشبورد</a>
+        <a href="/admin/bakeries">نانوایی‌ها</a>
+        <a href="/admin/bakeries/new">+ ثبت نانوایی</a>
+    </nav>
+
+    <div class="stats-grid">
+        <div class="stat-card"><span class="stat-big">{{ total_bakeries }}</span><span>کل نانوایی‌ها</span></div>
+        <div class="stat-card"><span class="stat-big">{{ active_bakeries }}</span><span>فعال</span></div>
+        <div class="stat-card"><span class="stat-big">{{ total_users }}</span><span>کاربران</span></div>
+        <div class="stat-card"><span class="stat-big">{{ total_reservations }}</span><span>کل نوبت‌ها</span></div>
+        <div class="stat-card"><span class="stat-big">{{ today_reservations }}</span><span>نوبت‌های امروز</span></div>
+    </div>
+
+    <div class="admin-two-col">
+        <div class="panel">
+            <h3>نانوایی‌ها</h3>
+            <table class="admin-table">
+                <tr><th>نام</th><th>وضعیت</th><th>رمز/نام کاربری</th></tr>
+                {% for b in bakeries %}
+                <tr>
+                    <td>{{ b.name }}</td>
+                    <td>{{ 'فعال' if b.is_active else 'غیرفعال' }} | {{ 'سهمیه‌ای' if b.bakery_type=='share' else 'آزاد' }}</td>
+                    <td dir="ltr">{{ b.username }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+        <div class="panel">
+            <h3>آخرین نوبت‌ها</h3>
+            <table class="admin-table">
+                <tr><th>کد</th><th>نانوایی</th><th>شماره</th><th>تاریخ</th><th>وضعیت</th></tr>
+                {% for r in reservations %}
+                <tr>
+                    <td dir="ltr">{{ r.code }}</td>
+                    <td>{{ r.bakery.name }}</td>
+                    <td dir="ltr">{{ r.user_phone }}</td>
+                    <td dir="ltr">{{ r.reservation_date }}</td>
+                    <td>{{ r.status }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

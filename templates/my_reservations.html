@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}نوبت‌های من{% endblock %}
+
+{% block content %}
+<div class="my-reservations-page">
+    <h1>نوبت‌های من</h1>
+
+    {% if not user %}
+        <p class="no-results">برای مشاهده نوبت‌هایتان لطفاً <a href="/login">وارد شوید</a>.</p>
+    {% else %}
+        <div id="myReservationsList" class="reservations-list">
+            <p class="loading">در حال بارگذاری...</p>
+        </div>
+    {% endif %}
+</div>
+
+<div id="qrModal" class="modal-overlay hidden" onclick="if(event.target===this)closeQr()">
+    <div class="modal-box">
+        <button class="modal-close" onclick="closeQr()">✕</button>
+        <h3>کد تحویل نوبت</h3>
+        <img id="qrModalImg" class="qr-img" src="" alt="QR" width="180" height="180">
+        <p class="code-value code-delivery" dir="ltr" id="qrModalCode"></p>
+        <p class="muted">این QR یا کد را هنگام مراجعه به نانوایی نشان دهید.</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', async function () {
+    {% if user %}
+    try {
+        const res = await fetch('/api/my-reservations');
+        const data = await res.json();
+        const list = document.getElementById('myReservationsList');
+        if (!data.success || !data.reservations.length) {
+            list.innerHTML = '<p class="no-results">هنوز نوبتی ثبت نکرده‌اید.</p>';
+            return;
+        }
+        const labels = {'pending':'در انتظار','ready':'آماده','waiting_confirm':'منتظر تأیید','delivered':'دریافت شده','cancelled':'لغو شده'};
+        list.innerHTML = data.reservations.map(r => `
+            <div class="reservation-card status-${r.status}" id="res-${r.code}">
+                ${r.status === 'ready' ? '<div class="ready-banner">🍞 نان شما آماده دریافت است!</div>' : ''}
+                <div class="res-header">
+                    <h3>${r.bakery_name}</h3>
+                    <span class="status-label">${labels[r.status] || r.status}</span>
+                </div>
+                <div class="res-body">
+                    <p>تاریخ: <strong>${r.reservation_date_jalali || r.reservation_date}</strong></p>
+                    <p>نان: ${r.loaf_count} عدد | کیسه: ${r.bag_count} عدد</p>
+                    <p>مبلغ: ${Number(r.total_price).toLocaleString('en-US')} تومان</p>
+                    <p class="code-text">کد رزرو: <strong dir="ltr">${r.code}</strong></p>
+                    ${r.status !== 'cancelled' ? '<p class="code-text">کد تحویل: <strong dir="ltr" class="delivery-code">' + r.delivery_code + '</strong></p>' : ''}
+                </div>
+                <div class="res-footer">
+                    ${r.qr_data ? `<button onclick="showQr('${r.code}')" class="btn-small">نمایش QR</button>` : ''}
+                    ${r.status !== 'delivered' && r.status !== 'cancelled' ? `<button onclick="cancelReservation('${r.code}')" class="btn-small btn-cancel">لغو نوبت</button>` : ''}
+                </div>
+            </div>`).join('');
+        window._resQr = {};
+        data.reservations.forEach(r => { if (r.qr_data) window._resQr[r.code] = r.qr_data; });
+    } catch (e) {
+        document.getElementById('myReservationsList').innerHTML = '<p class="no-results">خطا در بارگذاری</p>';
+    }
+    {% endif %}
+});
+async function cancelReservation(code) {
+    if (!confirm('آیا از لغو این نوبت مطمئن هستید؟')) return;
+    const res = await fetch('/api/reservations/' + code + '/cancel', { method: 'POST' });
+    const data = await res.json();
+    alert(data.success ? 'نوبت لغو شد.' : (data.error || 'خطا'));
+    if (data.success) location.reload();
+}
+function showQr(code) {
+    const qr = window._resQr[code];
+    if (!qr) return;
+    document.getElementById('qrModalImg').src = qr;
+    const card = document.getElementById('res-' + code);
+    const codeEl = card.querySelector('.delivery-code');
+    document.getElementById('qrModalCode').textContent = codeEl ? codeEl.textContent : '';
+    document.getElementById('qrModal').classList.remove('hidden');
+}
+function closeQr() {
+    document.getElementById('qrModal').classList.add('hidden');
+}
+</script>
+{% endblock %}
+

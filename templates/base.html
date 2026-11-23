@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>{% block title %}سامانه رزرو آنلاین نانوایی{% endblock %}</title>
+
+    <meta name="description" content="پیدا کردن نانوایی نزدیک، رزرو نوبت و دریافت نان">
+    <meta name="theme-color" content="#2d5016">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="icon" href="/static/icons/icon-192.png">
+    <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;700;800&display=swap" rel="stylesheet">
+
+    {% block head %}{% endblock %}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <a href="#" id="installBtn" class="install-prompt hidden">⬇ نصب برنامه روی دستگاه شما</a>
+
+    <header class="header">
+        <div class="header-content">
+            <a href="/" class="logo">🍞 نانوایی</a>
+            <nav class="nav">
+                <a href="/" class="nav-link">نانوایی‌ها</a>
+                <a href="/my-reservations" class="nav-link">نوبت‌های من</a>
+                {% if user %}
+                    <a href="/my-reservations" class="bell-link" title="اعلان‌ها">
+                        🔔<span class="bell-badge hidden" id="bellBadge">۰</span>
+                    </a>
+                {% endif %}
+                <a href="/bakery/login" class="nav-link">پنل نانوا</a>
+                {% if user %}
+                    <span class="nav-user">{{ user.phone }}</span>
+                    <a href="/logout" class="nav-link">خروج</a>
+                {% else %}
+                    <a href="/login" class="nav-link btn-nav-login">ورود</a>
+                {% endif %}
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        {% block content %}{% endblock %}
+    </main>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+
+    <script>
+        // ثبت Service Worker برای نصب به‌عنوان اپ
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('/sw.js').catch(function (e) {
+                    console.log('SW registration failed', e);
+                });
+            });
+        }
+        // دکمه نصب PWA
+        let deferredPrompt = null;
+        window.addEventListener('beforeinstallprompt', function (e) {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('installBtn').classList.remove('hidden');
+        });
+        document.getElementById('installBtn').addEventListener('click', async function (e) {
+            e.preventDefault();
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            const choice = await deferredPrompt.userChoice;
+            if (choice.outcome === 'dismissed') { /* کاربر انصراف داد */ }
+            deferredPrompt = null;
+            document.getElementById('installBtn').classList.add('hidden');
+        });
+    </script>
+
+    {% if user %}
+    <script>
+        // بررسی اعلان‌های «آماده شد» هر ۱۵ ثانیه
+        async function refreshBell() {
+            try {
+                const res = await fetch('/api/notifications/count');
+                const data = await res.json();
+                const badge = document.getElementById('bellBadge');
+                if (badge && data.count > 0) {
+                    badge.textContent = data.count.toLocaleString('fa-IR');
+                    badge.classList.remove('hidden');
+                } else if (badge) {
+                    badge.classList.add('hidden');
+                }
+            } catch (e) {}
+        }
+        refreshBell();
+        setInterval(refreshBell, 15000);
+    </script>
+    {% endif %}
+</body>
+</html>
+

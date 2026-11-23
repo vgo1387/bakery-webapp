@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}مدیریت نانوایی‌ها{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+    <div class="admin-header">
+        <h1>مدیریت نانوایی‌ها</h1>
+        <a href="/admin/bakeries/new" class="btn-primary">+ ثبت نانوایی جدید</a>
+    </div>
+
+    <nav class="admin-nav">
+        <a href="/admin">داشبورد</a>
+        <a href="/admin/bakeries" class="active">نانوایی‌ها</a>
+    </nav>
+
+    <div class="panel">
+        <table class="admin-table">
+            <tr>
+                <th>نام</th><th>نام کاربری</th><th>نوع</th><th>ظرفیت</th><th>فعال</th><th>عملیات</th>
+            </tr>
+            {% for b in bakeries %}
+            <tr>
+                <td>{{ b.name }}</td>
+                <td dir="ltr">{{ b.username }}</td>
+                <td>{{ 'سهمیه‌ای' if b.bakery_type=='share' else 'آزاد' }}</td>
+                <td>{{ b.daily_capacity }}</td>
+                <td>{{ 'فعال' if b.is_active else 'غیرفعال' }}</td>
+                <td class="table-actions">
+                    <a href="/admin/bakeries/{{ b.id }}/edit" class="btn-small">ویرایش</a>
+                    <button class="btn-small toggle-btn" data-id="{{ b.id }}" data-active="{{ b.is_active|lower }}">
+                        {{ 'غیرفعال' if b.is_active else 'فعال' }}
+                    </button>
+                    <form method="post" action="/admin/bakeries/{{ b.id }}/delete" style="display:inline" onsubmit="return confirm('حذف شود؟')">
+                        <button class="btn-small btn-cancel">حذف</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.querySelectorAll('.toggle-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+        const id = btn.dataset.id;
+        if (!confirm(btn.dataset.active === 'true' ? 'نانوایی غیرفعال شود؟' : 'نانوایی فعال شود؟')) return;
+        btn.disabled = true;
+        try {
+            const res = await fetch(`/admin/bakeries/${id}/toggle`, { method: 'POST' });
+            const data = await res.json();
+            if (data.success) location.reload();
+            else alert(data.error || 'خطا');
+        } catch (e) {
+            alert('خطا در ارتباط با سرور');
+        }
+        btn.disabled = false;
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}{{ bakery.name }} | سامانه رزرو نان{% endblock %}
+
+{% block content %}
+<div class="bakery-detail-page">
+    <div class="bakery-detail-card {{ 'type-share' if bakery.bakery_type=='share' else 'type-free' }}">
+        <div class="detail-header">
+            <h1>{{ bakery.name }}</h1>
+            <span class="type-badge {{ 'badge-share' if bakery.bakery_type=='share' else 'badge-free' }}">
+                {{ 'سهمیه‌ای' if bakery.bakery_type=='share' else 'آزاد' }}
+            </span>
+        </div>
+
+        <div class="info-grid">
+            <div class="info-item">
+                <span class="info-label">📍 آدرس</span>
+                <span class="info-value">{{ bakery.address }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">📞 تلفن</span>
+                <span class="info-value">{{ bakery.phone }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">🕐 ساعات کاری</span>
+                <span class="info-value">{{ bakery.working_hours_start }} تا {{ bakery.working_hours_end }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">🍞 قیمت هر نان</span>
+                <span class="info-value">{{ '{:,}'.format(bakery.price_per_loaf) }} تومان</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">👜 قیمت کیسه</span>
+                <span class="info-value">{{ '{:,}'.format(bakery.price_per_bag) }} تومان</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">📅 ظرفیت روزانه</span>
+                <span class="info-value">{{ bakery.daily_capacity }} نوبت</span>
+            </div>
+        </div>
+
+        <div class="status-banner">
+            {% if bakery.is_active %}
+                <span class="status-open">● باز</span>
+            {% else %}
+                <span class="status-closed">● غیرفعال</span>
+            {% endif %}
+            {% if bakery.accepting_reservations %}
+                <span class="status-accept">پذیرش نوبت فعال</span>
+            {% else %}
+                <span class="status-not-accept">پذیرش نوبت بسته</span>
+            {% endif %}
+        </div>
+
+        <div class="detail-actions">
+            <a href="{{ url_for('reserve_page', bakery_id=bakery.id) }}" class="btn-primary">دریافت نوبت</a>
+            <a href="/" class="btn-secondary">بازگشت به لیست</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

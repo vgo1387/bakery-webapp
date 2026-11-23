@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}{{ 'ویرایش نانوایی' if bakery else 'ثبت نانوایی جدید' }}{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+    <div class="panel" style="max-width:760px;margin:0 auto">
+        <h1>{{ 'ویرایش نانوایی: ' ~ bakery.name if bakery else 'ثبت نانوایی جدید' }}</h1>
+
+        {% if error %}<p class="error-msg">{{ error }}</p>{% endif %}
+
+        <form method="post">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>نام نانوایی *</label>
+                    <input type="text" name="name" class="input" required value="{{ bakery.name if bakery else '' }}">
+                </div>
+                <div class="form-group">
+                    <label>تلفن</label>
+                    <input type="text" name="phone" class="input" value="{{ bakery.phone if bakery else '' }}">
+                </div>
+                <div class="form-group span2">
+                    <label>آدرس *</label>
+                    <input type="text" name="address" class="input" required value="{{ bakery.address if bakery else '' }}">
+                </div>
+                <div class="form-group">
+                    <label>نوع</label>
+                    <select name="bakery_type" class="input">
+                        <option value="share" {% if bakery and bakery.bakery_type=='share' %}selected{% endif %}>سهمیه‌ای</option>
+                        <option value="free" {% if bakery and bakery.bakery_type=='free' %}selected{% endif %}>آزاد</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>ظرفیت روزانه</label>
+                    <input type="number" name="daily_capacity" class="input" value="{{ bakery.daily_capacity if bakery else 20 }}">
+                </div>
+                <div class="form-group">
+                    <label>قیمت هر نان (تومان)</label>
+                    <input type="number" name="price_per_loaf" class="input" value="{{ bakery.price_per_loaf if bakery else 0 }}">
+                </div>
+                <div class="form-group">
+                    <label>قیمت کیسه (تومان)</label>
+                    <input type="number" name="price_per_bag" class="input" value="{{ bakery.price_per_bag if bakery else 0 }}">
+                </div>
+                <div class="form-group">
+                    <label>ساعت شروع</label>
+                    <input type="text" name="working_hours_start" class="input" value="{{ bakery.working_hours_start if bakery else '06:00' }}">
+                </div>
+                <div class="form-group">
+                    <label>ساعت پایان</label>
+                    <input type="text" name="working_hours_end" class="input" value="{{ bakery.working_hours_end if bakery else '18:00' }}">
+                </div>
+                <div class="form-group">
+                    <label>روزهای کاری (0=شنبه تا 6=جمعه، با کاما)</label>
+                    <input type="text" name="working_days" class="input" value="{{ bakery.working_days if bakery else '0,1,2,3,4,5' }}">
+                </div>
+                <div class="form-group">
+                    <label>عرض جغرافیایی</label>
+                    <input type="text" name="latitude" class="input" value="{{ bakery.latitude if bakery else '35.7448' }}">
+                </div>
+                <div class="form-group">
+                    <label>طول جغرافیایی</label>
+                    <input type="text" name="longitude" class="input" value="{{ bakery.longitude if bakery else '51.3753' }}">
+                </div>
+                <div class="form-group">
+                    <label>نام کاربری پنل نانوا *</label>
+                    <input type="text" name="username" class="input" required value="{{ bakery.username if bakery else '' }}">
+                </div>
+                <div class="form-group">
+                    <label>{{ 'رمز جدید (خالی = بدون تغییر)' if bakery else 'رمز نانوا *' }}</label>
+                    <input type="text" name="password" class="input" {{ "" if bakery else "required" }}>
+                </div>
+            </div>
+            <button type="submit" class="btn-primary btn-block">ذخیره</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: bakery-webapp
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    # یک ورکر (نه چندتا) چون از SQLite استفاده می‌کنیم؛ ترد برای همزمانی
+    startCommand: gunicorn app:app --workers 1 --threads 4 --bind 0.0.0.0:$PORT
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: FLASK_DEBUG
+        value: "0"
+      - key: PYTHON_VERSION
+        value: "3.11.9"
+    # دیسک پایدار برای SQLite — فقط در پلن‌های غیررایگان Render موجود است.
+    # در پلن free، دیتابیس با هر دیپلوی ریست می‌شود (استفاده آزمایشی).
+    # disk:
+    #   name: bakery-data
+    #   mountPath: /var/data
+    #   sizeGB: 1
+    # اگر دیسک فعال شد، این env را اضافه کنید:
+    # - key: DATABASE_PATH
+    #   value: /var/data/bakery.db

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}ورود مدیر{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+    <div class="auth-card">
+        <h1>پنل مدیریت سامانه</h1>
+        <p class="auth-sub">ورود مدیر اصلی</p>
+
+        {% if error %}<p class="error-msg">{{ error }}</p>{% endif %}
+
+        <form method="post">
+            <div class="form-group">
+                <label for="username">نام کاربری</label>
+                <input type="text" id="username" name="username" class="input" required>
+            </div>
+            <div class="form-group">
+                <label for="password">رمز عبور</label>
+                <input type="password" id="password" name="password" class="input" required>
+            </div>
+            <button type="submit" class="btn-primary btn-block">ورود</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
