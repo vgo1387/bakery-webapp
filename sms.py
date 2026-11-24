@@ -97,17 +97,23 @@ def _send_eitaa(phone, text):
 
 
 def _send_rubika(phone, text):
-    """ارسال با بات روبیکا (API رسمی محدود است؛ در صورت تنظیم توکن تلاش می‌شود)"""
+    """ارسال با بات روبیکا (API رسمی v3 — مستندات rubika.ir/botapi)"""
     token = _env('RUBIKA_BOT_TOKEN')
     if not token:
         return False, 'ربات روبیکا هنوز تنظیم نشده است'
     try:
+        # قالب رسمی: https://botapi.rubika.ir/v3/{token}/{method}
         resp = requests.post(
-            f'https://botapi.rubika.ir/v3/bots/{token}/sendMessage',
+            f'https://botapi.rubika.ir/v3/{token}/sendMessage',
             json={'chat_id': phone, 'text': text}, timeout=10)
-        if resp.ok:
+        data = resp.json()
+        if resp.ok and data.get('status') == 'OK':
             return True, 'sent'
-        return False, 'کد ارسال نشد. ابتدا در روبیکا وارد ربات شوید و دکمه Start را بزنید'
+        # پیام خطای روبیکا یا کاربر استارت نکرده
+        msg = data.get('status') or ''
+        if msg in ('INVALID_INPUT', 'NOT_REGISTERED', 'FORBIDDEN'):
+            return False, 'کد ارسال نشد. ابتدا در روبیکا وارد ربات شوید و دکمه Start را بزنید'
+        return False, 'کد ارسال نشد (' + str(msg) + ')'
     except Exception:
         return False, 'خطا در اتصال به روبیکا'
 
