@@ -100,12 +100,15 @@
     let lng = parseFloat(lngInput.value) || 51.3753;
 
     const map = L.map('coordMap').setView([lat, lng], 15);
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    L.tileLayer(window.TILE_URL || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 19,
         attribution: '&copy; OpenStreetMap'
     }).addTo(map);
 
-    const marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+    const marker = L.marker([lat, lng], {
+        draggable: true,
+        icon: (window.pinIcon ? window.pinIcon(40) : undefined)
+    }).addTo(map);
 
     function syncFromMarker() {
         const p = marker.getLatLng();

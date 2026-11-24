@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 {% block title %}نوبت‌های من{% endblock %}
 
+{% block head %}
+<link rel="stylesheet" href="/static/leaflet/leaflet.css">
+{% endblock %}
+
 {% block content %}
 <div class="my-reservations-page">
     <h1>نوبت‌های من</h1>
@@ -26,6 +30,7 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="/static/leaflet/leaflet.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', async function () {
     {% if user %}
@@ -54,16 +59,53 @@ document.addEventListener('DOMContentLoaded', async function () {
                 </div>
                 <div class="res-footer">
                     ${r.qr_data ? `<button onclick="showQr('${r.code}')" class="btn-small">نمایش QR</button>` : ''}
+                    ${r.bakery_lat ? `<button onclick="toggleResMap('${r.code}')" class="btn-small">🗺 نقشه و مسیر</button>` : ''}
                     ${r.status !== 'delivered' && r.status !== 'cancelled' ? `<button onclick="cancelReservation('${r.code}')" class="btn-small btn-cancel">لغو نوبت</button>` : ''}
                 </div>
+                ${r.bakery_lat ? `
+                <div class="res-map hidden" id="wrap-${r.code}">
+                    <div class="res-map-inner" id="map-${r.code}" dir="ltr"></div>
+                    <div class="route-row">
+                        <a class="route-mini gmap" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=${r.bakery_lat},${r.bakery_lng}">🔵 گوگل مپ</a>
+                        <a class="route-mini neshan" target="_blank" rel="noopener" href="https://neshan.org/maps/@${r.bakery_lat},${r.bakery_lng},17z,places">🟢 نشان</a>
+                        <a class="route-mini balad" target="_blank" rel="noopener" href="https://balad.ir/location?latitude=${r.bakery_lat}&longitude=${r.bakery_lng}&zoom=17">🟡 بلد</a>
+                    </div>
+                </div>` : ''}
             </div>`).join('');
         window._resQr = {};
         data.reservations.forEach(r => { if (r.qr_data) window._resQr[r.code] = r.qr_data; });
+        window._resData = data.reservations;
     } catch (e) {
         document.getElementById('myReservationsList').innerHTML = '<p class="no-results">خطا در بارگذاری</p>';
     }
     {% endif %}
 });
+// نمایش/بستن نقشه نانوایی هر نوبت (بارگذاری تنبل — فقط بار اول نقشه ساخته می‌شود)
+window._resMaps = {};
+function toggleResMap(code) {
+    const wrap = document.getElementById('wrap-' + code);
+    const el = document.getElementById('map-' + code);
+    const r = (window._resData || []).find(x => x.code === code);
+    if (!wrap || !el || !r) return;
+    if (!wrap.classList.contains('hidden')) {
+        wrap.classList.add('hidden');
+        return;
+    }
+    wrap.classList.remove('hidden');
+    if (typeof L === 'undefined') return;
+    if (!window._resMaps[code]) {
+        const map = L.map(el, { scrollWheelZoom: false }).setView([r.bakery_lat, r.bakery_lng], 16);
+        L.tileLayer(window.TILE_URL || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; OpenStreetMap'
+        }).addTo(map);
+        L.marker([r.bakery_lat, r.bakery_lng], { icon: (window.pinIcon ? window.pinIcon(34) : undefined) }).addTo(map);
+        window._resMaps[code] = map;
+        setTimeout(function () { map.invalidateSize(); }, 200);
+    } else {
+        window._resMaps[code].invalidateSize();
+    }
+}
 async function cancelReservation(code) {
     if (!confirm('آیا از لغو این نوبت مطمئن هستید؟')) return;
     const res = await fetch('/api/reservations/' + code + '/cancel', { method: 'POST' });

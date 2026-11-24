@@ -58,6 +58,7 @@
         {% block content %}{% endblock %}
     </main>
 
+    <script>window.TILE_URL = {{ (tile_url or 'https://tile.openstreetmap.org/{z}/{x}/{y}.png')|tojson }};</script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     {% block scripts %}{% endblock %}
 

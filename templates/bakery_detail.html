@@ -51,10 +51,37 @@
             {% endif %}
         </div>
 
+        <div class="detail-map-wrap">
+            <div id="detailMap" dir="ltr"></div>
+            <button type="button" class="btn-secondary btn-block route-open-btn"
+                    onclick="openRoutePicker({{ bakery.latitude }}, {{ bakery.longitude }}, {{ bakery.name|tojson }})">
+                🧭 مسیریابی به این نانوایی
+            </button>
+        </div>
+
         <div class="detail-actions">
-            <a href="{{ url_for('reserve_page', bakery_id=bakery.id) }}" class="btn-primary">دریافت نوبت</a>
+            <a href="{{ url_for('customer.reserve_page', bakery_id=bakery.id) }}" class="btn-primary">دریافت نوبت</a>
             <a href="/" class="btn-secondary">بازگشت به لیست</a>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/leaflet/leaflet.js"></script>
+<script>
+(function () {
+    const el = document.getElementById('detailMap');
+    if (!el || !window.L) return;
+    const lat = {{ bakery.latitude }};
+    const lng = {{ bakery.longitude }};
+    const map = L.map('detailMap', { scrollWheelZoom: false }).setView([lat, lng], 16);
+    L.tileLayer(window.TILE_URL || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+    L.marker([lat, lng], { icon: (window.pinIcon ? window.pinIcon(36) : undefined) }).addTo(map);
+    setTimeout(function () { map.invalidateSize(); }, 250);
+})();
+</script>
 {% endblock %}
