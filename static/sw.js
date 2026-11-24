@@ -1,5 +1,5 @@
 /* Service Worker — کش برای کار آفلاین، با اولویت نسخه جدید */
-const CACHE = 'bakery-v3';
+const CACHE = 'bakery-v4';
 const CORE = [
     '/',
     '/login',
