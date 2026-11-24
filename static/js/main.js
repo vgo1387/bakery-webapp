@@ -119,6 +119,48 @@ function sortBakeries() {
     renderList();
 }
 
+// ---------- Routing helpers (مسیریابی + آیکون مشترک نقشه) ----------
+window.TILE_URL = window.TILE_URL || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+
+// آیکون 📍 با CSS — بدون نیاز به فایل تصویر (رفع مشکل لود نشدن مارکر)
+window.pinIcon = function (size) {
+    const s = size || 34;
+    return L.divIcon({
+        className: '',
+        html: `<div class="pin-emoji" style="font-size:${s}px;line-height:${s}px">📍</div>`,
+        iconSize: [s, s],
+        iconAnchor: [s / 2, s - 3],
+        popupAnchor: [0, -(s - 10)]
+    });
+};
+
+// منوی انتخاب برنامه مسیریابی: گوگل مپ / نشان / بلد
+window.openRoutePicker = function (lat, lng, name) {
+    let menu = document.getElementById('routePicker');
+    if (!menu) {
+        menu = document.createElement('div');
+        menu.id = 'routePicker';
+        menu.className = 'route-picker hidden';
+        menu.innerHTML = `
+            <div class="route-picker-box">
+                <h3>🧭 مسیریابی با کدام برنامه؟</h3>
+                <a class="route-btn gmap" target="_blank" rel="noopener">🔵 گوگل مپ</a>
+                <a class="route-btn neshan" target="_blank" rel="noopener">🟢 نشان</a>
+                <a class="route-btn balad" target="_blank" rel="noopener">🟡 بلد</a>
+                <button class="route-cancel" type="button">بستن</button>
+            </div>`;
+        document.body.appendChild(menu);
+        menu.addEventListener('click', e => {
+            if (e.target === menu) menu.classList.add('hidden');
+        });
+        menu.querySelector('.route-cancel').addEventListener('click', () => menu.classList.add('hidden'));
+    }
+    menu.querySelector('.gmap').href = `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+    menu.querySelector('.neshan').href = `https://neshan.org/maps/@${lat},${lng},17z,places`;
+    menu.querySelector('.balad').href = `https://balad.ir/location?latitude=${lat}&longitude=${lng}&zoom=17`;
+    menu.classList.remove('hidden');
+};
+
 // ---------- Geolocation ----------
 function requestLocation() {
     if (!navigator.geolocation) return;
@@ -141,7 +183,7 @@ function initMapApp() {
         map = L.map('map', { zoomControl: false }).setView([35.7448, 51.3753], 12);
         // زوم در سمت راست (هماهنگ با چیدمان RTL) زیر دکمه موقعیت قرار نمی‌گیرد
         L.control.zoom({ position: 'topright' }).addTo(map);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        L.tileLayer(window.TILE_URL || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '© OpenStreetMap',
             maxZoom: 19,
             errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAPLtJgAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw=='
