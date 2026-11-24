@@ -387,3 +387,26 @@ a { color: inherit; }
 }
 .channel-btn:hover { background: #f4f9f1; border-color: var(--primary-light); }
 .channel-btn:active { transform: scale(0.98); }
+
+/* ---------- Bot start helper ---------- */
+.bot-help {
+    background: #fff8e6;
+    border: 1px solid #f0e0b0;
+    border-radius: 12px;
+    padding: 0.8rem;
+    margin-top: 0.8rem;
+    text-align: center;
+    font-size: 0.88rem;
+}
+.bot-link-btn {
+    display: block;
+    background: var(--success);
+    color: #fff;
+    border-radius: 10px;
+    padding: 0.7rem;
+    text-decoration: none;
+    font-weight: 700;
+    margin: 0.5rem 0;
+}
+.bot-link-btn:hover { filter: brightness(0.95); }
+.bot-hint { color: var(--text-light); font-size: 0.8rem; line-height: 1.6; }
