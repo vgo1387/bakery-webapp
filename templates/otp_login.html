@@ -36,6 +36,11 @@
             </div>
             <button onclick="showStep('stepConfirm')" class="btn-secondary btn-block" style="margin-top:0.8rem">→ بازگشت</button>
             <p id="channelError" class="error-msg hidden"></p>
+            <div id="botHelp" class="bot-help hidden">
+                <p><b>ربات را استارت نکرده‌اید:</b></p>
+                <a id="botLinkBtn" class="bot-link-btn" href="#" target="_blank" rel="noopener">🤖 رفتن به ربات و زدن Start</a>
+                <p class="bot-hint">بعد از زدن Start، به این صفحه برگردید و دوباره روی همان دکمه (مثلاً 🔴 روبیکا) بزنید تا کد ارسال شود.</p>
+            </div>
         </div>
 
         <!-- مرحله ۴: وارد کردن کد -->
@@ -108,6 +113,14 @@ async function sendCode(channel) {
     } else {
         err.textContent = data.error || 'خطا در ارسال کد';
         err.classList.remove('hidden');
+        const help = document.getElementById('botHelp');
+        const btn = document.getElementById('botLinkBtn');
+        if (data.bot_url) {
+            btn.href = data.bot_url;
+            help.classList.remove('hidden');
+        } else {
+            help.classList.add('hidden');
+        }
     }
 }
 
