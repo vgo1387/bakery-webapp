@@ -106,16 +106,20 @@ def create_app():
         xml.append('</urlset>')
         return Response('\n'.join(xml), mimetype='application/xml')
 
-    @app.route('/google<code>.html')
-    def google_verification(code):
-        """مسیر آماده برای فایل تأییدیه Google Search Console —
-        کافی است فایلی که گوگل می‌دهد را با همان اسم در پوشه static بگذارید"""
-        from flask import send_from_directory
-        filename = f'google{code}.html'
+    @app.route('/static/<path:filename>', endpoint='static_files')
+    def _serve_all_static(filename):
+        """سرو فایل‌های استاتیک — شامل فایل تأییدیه Google Search Console.
+        فایل google...html را در پوشه static بگذارید؛ خودش سرو میشه."""
         import os as _os
-        if _os.path.exists(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), 'static', filename)):
-            return send_from_directory('static', filename, mimetype='text/html')
-        from flask import abort
+        import mimetypes as _mimetypes
+        from flask import send_from_directory, abort
+        file_path = _os.path.join(
+            _os.path.dirname(_os.path.abspath(__file__)), 'static', filename
+        )
+        if _os.path.exists(file_path):
+            # mimetype را بر اساس پسوند فایل تعیین می‌کنیم
+            mime, _ = _mimetypes.guess_type(filename)
+            return send_from_directory('static', filename, mimetype=mime or 'text/plain')
         abort(404)
 
     return app
