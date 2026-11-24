@@ -13,36 +13,62 @@
                 <label for="loginPhone">شماره موبایل</label>
                 <input type="tel" id="loginPhone" class="input" placeholder="مثلاً 09123456789" dir="ltr">
             </div>
-            <button onclick="requestOtp()" class="btn-primary btn-block">ارسال کد تأیید</button>
+            <button onclick="goConfirm()" class="btn-primary btn-block">ادامه</button>
             <p id="otpError" class="error-msg hidden"></p>
         </div>
 
-        <!-- مرحله ۲: کد -->
+        <!-- مرحله ۲: تأیید شماره -->
+        <div id="stepConfirm" class="hidden">
+            <p class="confirm-text">شماره شما درست است؟</p>
+            <p class="confirm-phone" dir="ltr" id="phoneEcho"></p>
+            <button onclick="goChannel()" class="btn-primary btn-block">✓ تأیید شماره</button>
+            <button onclick="showStep('stepPhone')" class="btn-secondary btn-block" style="margin-top:0.6rem">ویرایش شماره</button>
+        </div>
+
+        <!-- مرحله ۳: انتخاب روش ارسال -->
+        <div id="stepChannel" class="hidden">
+            <p class="confirm-text">کد تأیید از کجا ارسال شود؟</p>
+            <div class="channel-grid">
+                <button onclick="sendCode('sms')" class="channel-btn">📨 پیامک</button>
+                <button onclick="sendCode('bale')" class="channel-btn">🟢 بله</button>
+                <button onclick="sendCode('eitaa')" class="channel-btn">🟡 ایتا</button>
+                <button onclick="sendCode('rubika')" class="channel-btn">🔴 روبیکا</button>
+            </div>
+            <button onclick="showStep('stepConfirm')" class="btn-secondary btn-block" style="margin-top:0.8rem">→ بازگشت</button>
+            <p id="channelError" class="error-msg hidden"></p>
+        </div>
+
+        <!-- مرحله ۴: وارد کردن کد -->
         <div id="stepCode" class="hidden">
             <div class="form-group">
                 <label for="loginCode">کد تأیید</label>
                 <input type="text" id="loginCode" class="input" placeholder="کد ۴ رقمی" dir="ltr" maxlength="4">
             </div>
             <button onclick="verifyOtp()" class="btn-primary btn-block">ورود</button>
-            <button onclick="showPhoneStep()" class="btn-secondary btn-block" style="margin-top:0.6rem">تغییر شماره</button>
+            <button onclick="resendCode()" class="btn-secondary btn-block" style="margin-top:0.6rem">ارسال مجدد کد</button>
+            <button onclick="showStep('stepChannel')" class="btn-secondary btn-block" style="margin-top:0.4rem">→ بازگشت</button>
             <p id="verifyError" class="error-msg hidden"></p>
+            <div id="devCodeBox" class="mock-banner hidden">
+                حالت آزمایشی — کد شما: <b id="devCode" dir="ltr"></b>
+            </div>
         </div>
-
-        {% if mock_notice %}
-        <div class="mock-banner">حالت آزمایشی: کد تأیید در فایل <b>sms_log.txt</b> ذخیره می‌شود.</div>
-        {% endif %}
     </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-function showPhoneStep() {
-    document.getElementById('stepPhone').classList.remove('hidden');
-    document.getElementById('stepCode').classList.add('hidden');
-    document.getElementById('otpError').classList.add('hidden');
+const STEPS = ['stepPhone', 'stepConfirm', 'stepChannel', 'stepCode'];
+let currentPhone = '';
+let lastChannel = 'sms';
+
+function showStep(id) {
+    STEPS.forEach(s => {
+        document.getElementById(s).classList.toggle('hidden', s !== id);
+    });
 }
-async function requestOtp() {
+
+function goConfirm() {
     const phone = document.getElementById('loginPhone').value.trim();
     const err = document.getElementById('otpError');
     if (!/^09\d{9}$/.test(phone)) {
@@ -51,26 +77,52 @@ async function requestOtp() {
         return;
     }
     err.classList.add('hidden');
+    currentPhone = phone;
+    document.getElementById('phoneEcho').textContent = phone;
+    showStep('stepConfirm');
+}
+
+function goChannel() {
+    showStep('stepChannel');
+}
+
+async function sendCode(channel) {
+    const err = document.getElementById('channelError');
+    err.classList.add('hidden');
     const res = await fetch('/api/otp/request', {
-        method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({phone})
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({phone: currentPhone, channel})
     });
     const data = await res.json();
     if (data.success) {
-        document.getElementById('stepPhone').classList.add('hidden');
-        document.getElementById('stepCode').classList.remove('hidden');
+        lastChannel = channel;
+        showStep('stepCode');
+        const box = document.getElementById('devCodeBox');
+        if (data.dev_code) {
+            document.getElementById('devCode').textContent = data.dev_code;
+            box.classList.remove('hidden');
+        } else {
+            box.classList.add('hidden');
+        }
         document.getElementById('loginCode').focus();
     } else {
         err.textContent = data.error || 'خطا در ارسال کد';
         err.classList.remove('hidden');
     }
 }
+
+function resendCode() {
+    showStep('stepChannel');
+    sendCode(lastChannel);
+}
+
 async function verifyOtp() {
-    const phone = document.getElementById('loginPhone').value.trim();
     const code = document.getElementById('loginCode').value.trim();
     const err = document.getElementById('verifyError');
     err.classList.add('hidden');
     const res = await fetch('/api/otp/verify', {
-        method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({phone, code})
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({phone: currentPhone, code})
     });
     const data = await res.json();
     if (data.success) {

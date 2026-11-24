@@ -3,10 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>{% block title %}سامانه رزرو آنلاین نانوایی{% endblock %}</title>
+    <title>{% block title %}نانوبت — رزرو آنلاین نان{% endblock %}</title>
 
-    <meta name="description" content="پیدا کردن نانوایی نزدیک، رزرو نوبت و دریافت نان">
+    <meta name="description" content="نانوبت — پیدا کردن نانوایی نزدیک، رزرو نوبت آنلاین و دریافت نان">
     <meta name="theme-color" content="#2d5016">
+    <meta name="robots" content="index, follow">
+    <meta property="og:title" content="نانوبت — رزرو آنلاین نان">
+    <meta property="og:description" content="پیدا کردن نانوایی نزدیک، رزرو نوبت و دریافت نان">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="/static/icons/icon-192.png">
+    <meta property="og:locale" content="fa_IR">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -23,10 +29,12 @@
 </head>
 <body>
     <a href="#" id="installBtn" class="install-prompt hidden">⬇ نصب برنامه روی دستگاه شما</a>
+    <button id="backFab" class="back-fab" title="بازگشت" aria-label="بازگشت"
+            onclick="if (history.length > 1) { history.back(); } else { location.href = '/'; }">→</button>
 
     <header class="header">
         <div class="header-content">
-            <a href="/" class="logo">🍞 نانوایی</a>
+            <a href="/" class="logo"><img src="/static/icons/icon-192.png" class="logo-icon" alt="نانوبت"> نانوبت</a>
             <nav class="nav">
                 <a href="/" class="nav-link">نانوایی‌ها</a>
                 <a href="/my-reservations" class="nav-link">نوبت‌های من</a>
