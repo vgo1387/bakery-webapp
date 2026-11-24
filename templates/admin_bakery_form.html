@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 {% block title %}{{ 'ویرایش نانوایی' if bakery else 'ثبت نانوایی جدید' }}{% endblock %}
 
+{% block head %}
+<link rel="stylesheet" href="/static/leaflet/leaflet.css">
+{% endblock %}
+
 {% block content %}
 <div class="admin-page">
     <div class="panel" style="max-width:760px;margin:0 auto">
@@ -53,13 +57,20 @@
                     <label>روزهای کاری (0=شنبه تا 6=جمعه، با کاما)</label>
                     <input type="text" name="working_days" class="input" value="{{ bakery.working_days if bakery else '0,1,2,3,4,5' }}">
                 </div>
+                <div class="form-group span2">
+                    <label>موقعیت روی نقشه *</label>
+                    <p style="font-size:0.85rem;color:var(--text-light);margin-bottom:0.4rem">
+                        روی نقشه کلیک کنید یا نشانگر را بکشید تا موقعیت نانوایی مشخص شود
+                    </p>
+                    <div id="coordMap" dir="ltr" style="height:300px;border-radius:12px;overflow:hidden;z-index:1;position:relative"></div>
+                </div>
                 <div class="form-group">
                     <label>عرض جغرافیایی</label>
-                    <input type="text" name="latitude" class="input" value="{{ bakery.latitude if bakery else '35.7448' }}">
+                    <input type="text" name="latitude" id="latInput" class="input" value="{{ bakery.latitude if bakery else '35.7448' }}">
                 </div>
                 <div class="form-group">
                     <label>طول جغرافیایی</label>
-                    <input type="text" name="longitude" class="input" value="{{ bakery.longitude if bakery else '51.3753' }}">
+                    <input type="text" name="longitude" id="lngInput" class="input" value="{{ bakery.longitude if bakery else '51.3753' }}">
                 </div>
                 <div class="form-group">
                     <label>نام کاربری پنل نانوا *</label>
@@ -74,4 +85,54 @@
         </form>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/leaflet/leaflet.js"></script>
+<script>
+(function () {
+    const latInput = document.getElementById('latInput');
+    const lngInput = document.getElementById('lngInput');
+    const mapEl = document.getElementById('coordMap');
+    if (!mapEl || !window.L) return;
+
+    let lat = parseFloat(latInput.value) || 35.7448;
+    let lng = parseFloat(lngInput.value) || 51.3753;
+
+    const map = L.map('coordMap').setView([lat, lng], 15);
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+
+    const marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+
+    function syncFromMarker() {
+        const p = marker.getLatLng();
+        latInput.value = p.lat.toFixed(6);
+        lngInput.value = p.lng.toFixed(6);
+    }
+
+    function syncFromInputs() {
+        const la = parseFloat(latInput.value);
+        const ln = parseFloat(lngInput.value);
+        if (!isNaN(la) && !isNaN(ln)) {
+            marker.setLatLng([la, ln]);
+            map.setView([la, ln]);
+        }
+    }
+
+    marker.on('dragend', syncFromMarker);
+    map.on('click', function (e) {
+        marker.setLatLng(e.latlng);
+        syncFromMarker();
+    });
+    latInput.addEventListener('change', syncFromInputs);
+    lngInput.addEventListener('change', syncFromInputs);
+
+    // مطمئن شویم نقشه بعد از رندر کامل، اندازه درست می‌گیرد
+    setTimeout(function () { map.invalidateSize(); }, 250);
+    window.addEventListener('resize', function () { map.invalidateSize(); });
+})();
+</script>
 {% endblock %}
