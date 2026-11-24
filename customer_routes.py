@@ -54,7 +54,14 @@ def otp_request():
     ok, msg = sms.send_otp(phone, code, channel)
     resp = {'success': bool(ok), 'channel': channel, 'mock': sms.MOCK_SMS}
     if not ok:
-        resp['error'] = msg
+        if msg == 'NEEDS_START':
+            # کاربر هنوز ربات را استارت نکرده — لینک بات را برمی‌گردانیم
+            resp['error'] = 'کد ارسال نشد — اول وارد ربات شوید و دکمه Start را بزنید'
+            bot_url = sms.get_bot_url(channel)
+            if bot_url:
+                resp['bot_url'] = bot_url
+        else:
+            resp['error'] = msg
     elif sms.MOCK_SMS and channel == 'sms':
         # حالت آزمایشی: کد روی صفحه نمایش داده می‌شود تا ورود قابل تست باشد
         resp['dev_code'] = code

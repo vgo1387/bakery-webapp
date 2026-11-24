@@ -111,8 +111,8 @@ def _send_rubika(phone, text):
             return True, 'sent'
         # پیام خطای روبیکا یا کاربر استارت نکرده
         msg = data.get('status') or ''
-        if msg in ('INVALID_INPUT', 'NOT_REGISTERED', 'FORBIDDEN'):
-            return False, 'کد ارسال نشد. ابتدا در روبیکا وارد ربات شوید و دکمه Start را بزنید'
+        if msg in ('INVALID_INPUT', 'NOT_REGISTERED', 'FORBIDDEN', 'NOT_ACTIVE'):
+            return False, 'NEEDS_START'
         return False, 'کد ارسال نشد (' + str(msg) + ')'
     except Exception:
         return False, 'خطا در اتصال به روبیکا'
@@ -139,3 +139,13 @@ def send_otp(phone, code, channel='sms'):
     if ok:
         MOCK_SMS = False
     return ok, msg
+
+
+def get_bot_url(channel):
+    """لینک ورود به بات هر پیام‌رسان (برای راهنمایی کاربر به Start)"""
+    urls = {
+        'rubika': _env('RUBIKA_BOT_URL') or 'https://rubika.ir/nanobatbot',
+        'bale': _env('BALE_BOT_URL') or '',
+        'eitaa': _env('EITAA_BOT_URL') or '',
+    }
+    return urls.get(channel, '')
