@@ -220,6 +220,9 @@ def api_my_reservations():
     for r in rows:
         d = r.to_dict()
         d['bakery_name'] = r.bakery.name if r.bakery else ''
+        if r.bakery:
+            d['bakery_lat'] = r.bakery.latitude
+            d['bakery_lng'] = r.bakery.longitude
         if r.status not in ('cancelled', 'delivered'):
             d['qr_data'] = qr_svg_base64(r.delivery_code)
         result.append(d)

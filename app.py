@@ -58,7 +58,9 @@ def create_app():
         from models import User
         uid = session.get('user_id')
         user = User.query.get(uid) if uid else None
-        return {'user': user}
+        # آدرس کاشی نقشه — قابل تنظیم با متغیر محیطی TILE_URL (مثلاً کاشی ایرانی نشان با کلید API)
+        tile_url = os.environ.get('TILE_URL') or 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
+        return {'user': user, 'tile_url': tile_url}
 
     @app.route('/manifest.json')
     def manifest():
