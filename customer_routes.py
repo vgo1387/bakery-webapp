@@ -30,6 +30,9 @@ def login_page():
 def otp_request():
     data = request.get_json(silent=True) or {}
     phone = str(data.get('phone') or '').strip()
+    channel = str(data.get('channel') or 'sms').strip().lower()
+    if channel not in ('sms', 'bale', 'eitaa', 'rubika'):
+        channel = 'sms'
     if not phone:
         return jsonify({'success': False, 'error': 'شماره موبایل را وارد کنید'}), 400
 
@@ -44,12 +47,18 @@ def otp_request():
         OTP.phone == phone,
         OTP.created_at >= datetime.utcnow() - timedelta(hours=1)
     ).count()
+    db.session.commit()
     if recent >= 5:
         return jsonify({'success': False, 'error': 'تعداد درخواست زیاد است، کمی بعد تلاش کنید'}), 429
-    db.session.commit()
 
-    ok, msg = sms.send_otp(phone, code)
-    return jsonify({'success': True, 'mock': sms.MOCK_SMS})
+    ok, msg = sms.send_otp(phone, code, channel)
+    resp = {'success': bool(ok), 'channel': channel, 'mock': sms.MOCK_SMS}
+    if not ok:
+        resp['error'] = msg
+    elif sms.MOCK_SMS and channel == 'sms':
+        # حالت آزمایشی: کد روی صفحه نمایش داده می‌شود تا ورود قابل تست باشد
+        resp['dev_code'] = code
+    return jsonify(resp)
 
 
 @customer_bp.route('/api/otp/verify', methods=['POST'])

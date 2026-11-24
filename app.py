@@ -82,6 +82,42 @@ def create_app():
         url = f'http://{best}:5000/' if best else 'http://127.0.0.1:5000/'
         return render_template('connect_qr.html', qr=qr_svg_base64(url), url=url, ips=ips)
 
+    @app.route('/robots.txt')
+    def robots_txt():
+        from flask import send_from_directory
+        return send_from_directory('static', 'robots.txt', mimetype='text/plain')
+
+    @app.route('/sitemap.xml')
+    def sitemap_xml():
+        """نقشه سایت پویا برای موتورهای جست‌وجو (SEO)"""
+        from flask import Response
+        from models import Bakery
+        base = request.url_root.rstrip('/')
+        urls = [f'{base}/', f'{base}/login']
+        try:
+            for b in Bakery.query.filter_by(is_active=True).all():
+                urls.append(f'{base}/bakeries/{b.id}')
+        except Exception:
+            pass
+        xml = ['<?xml version="1.0" encoding="UTF-8"?>',
+               '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
+        for u in urls:
+            xml.append(f'<url><loc>{u}</loc></url>')
+        xml.append('</urlset>')
+        return Response('\n'.join(xml), mimetype='application/xml')
+
+    @app.route('/google<code>.html')
+    def google_verification(code):
+        """مسیر آماده برای فایل تأییدیه Google Search Console —
+        کافی است فایلی که گوگل می‌دهد را با همان اسم در پوشه static بگذارید"""
+        from flask import send_from_directory
+        filename = f'google{code}.html'
+        import os as _os
+        if _os.path.exists(_os.path.join(_os.path.dirname(_os.path.abspath(__file__)), 'static', filename)):
+            return send_from_directory('static', filename, mimetype='text/html')
+        from flask import abort
+        abort(404)
+
     return app
 
 

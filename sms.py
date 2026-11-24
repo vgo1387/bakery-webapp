@@ -1,21 +1,32 @@
 """
-سرویس پیامک
+سرویس ارسال کد تأیید از کانال‌های مختلف
 
-در حالت آزمایشی (MOCK) کد تأیید ارسال واقعی نمی‌شود و در کنسول / فایل لاگ چاپ می‌شود
-تا شما بتوانید فرایند لاگین را تست کنید.
+کانال‌ها:
+  - sms     : پیامک واقعی از طریق کاوه‌نگار (اگر KAVENEGAR_API_KEY تنظیم شده باشد)
+              در غیر این صورت حالت آزمایشی (کد در sms_log.txt ذخیره می‌شود)
+  - bale    : ارسال با بات بله    (متغیر محیطی BALE_BOT_TOKEN)
+  - eitaa   : ارسال با بات ایتا   (متغیر محیطی EITAA_BOT_TOKEN)
+  - rubika  : ارسال با بات روبیکا (متغیر محیطی RUBIKA_BOT_TOKEN)
 
-برای اتصال به سرویس واقعی ایرانی (مثلاً Kavenegar):
-  1. MOCK_SMS را به False تغییر دهید
-  2. KAVENEGAR_API_KEY را پر کنید
-  3. شماره ارسال‌کننده را ست کنید
+نکته: بات‌ها فقط به کاربری می‌توانند پیام بدهند که یک بار ربات را Start کرده باشد.
 """
+import os
 import time
-
-MOCK_SMS = True                 # در حالت آزمایشی True بگذارید
-KAVENEGAR_API_KEY = ''          # کلید API Kavenegar
-SENDER = '1000000000'           # شماره یا خط ارسال
+import requests
 
 LOG_FILE = 'sms_log.txt'
+
+MOCK_SMS = True  # در زمان ارسال بر اساس متغیرهای محیطی به‌روز می‌شود
+
+
+def _env(name, default=''):
+    return os.environ.get(name, default).strip()
+
+
+def _mock():
+    """اگر هیچ کلیدی تنظیم نشده باشد، حالت آزمایشی است"""
+    return not (_env('KAVENEGAR_API_KEY') or _env('BALE_BOT_TOKEN') or
+                _env('EITAA_BOT_TOKEN') or _env('RUBIKA_BOT_TOKEN'))
 
 
 def _log(phone, text):
@@ -31,22 +42,94 @@ def _log(phone, text):
         pass
 
 
-def send_otp(phone, code):
-    text = f"کد تأیید ورود شما به سامانه نانوایی: {code}"
-    if MOCK_SMS:
-        _log(phone, text)
+def _send_sms(phone, text):
+    """پیامک واقعی از طریق کاوه‌نگار؛ بدون کلید = حالت آزمایشی"""
+    key = _env('KAVENEGAR_API_KEY')
+    if not key:
         return True, 'sent_mock'
     try:
-        # نمونه اتصال Kavenegar
-        import requests
+        params = {'receptor': phone, 'message': text}
+        sender = _env('KAVENEGAR_SENDER')
+        if sender:
+            params['sender'] = sender
         resp = requests.get(
-            'https://api.kavenegar.com/v1/{}/sms/send.json'.format(KAVENEGAR_API_KEY),
-            params={'receptor': phone, 'message': text, 'sender': SENDER},
-            timeout=10,
-        )
+            f'https://api.kavenegar.com/v1/{key}/sms/send.json',
+            params=params, timeout=10)
         data = resp.json()
         if data.get('return', {}).get('status') == 200:
             return True, 'sent'
-        return False, data.get('return', {}).get('message')
-    except Exception as e:
-        return False, str(e)
+        return False, 'خطا در ارسال پیامک: ' + str(data.get('return', {}).get('message'))
+    except Exception:
+        return False, 'خطا در اتصال به سرویس پیامک'
+
+
+def _send_bale(phone, text):
+    """ارسال با بات بله (API سازگار با تلگرام)"""
+    token = _env('BALE_BOT_TOKEN')
+    if not token:
+        return False, 'ربات بله هنوز تنظیم نشده است'
+    try:
+        resp = requests.post(
+            f'https://tapi.bale.ai/bot{token}/sendMessage',
+            json={'chat_id': phone, 'text': text}, timeout=10)
+        if resp.ok:
+            return True, 'sent'
+        # خطای 400/403 معمولاً یعنی کاربر ربات را استارت نکرده
+        return False, 'کد ارسال نشد. ابتدا در بله وارد ربات شوید و دکمه Start را بزنید'
+    except Exception:
+        return False, 'خطا در اتصال به بله'
+
+
+def _send_eitaa(phone, text):
+    """ارسال با ایتایار (سرویس بات ایتا)"""
+    token = _env('EITAA_BOT_TOKEN')
+    if not token:
+        return False, 'ربات ایتا هنوز تنظیم نشده است'
+    try:
+        resp = requests.post(
+            f'https://eitaayar.ir/api/{token}/sendMessage',
+            data={'chat_id': phone, 'text': text}, timeout=10)
+        if resp.ok and resp.json().get('status', 200) == 200:
+            return True, 'sent'
+        return False, 'کد ارسال نشد. ابتدا در ایتا وارد ربات شوید و دکمه Start را بزنید'
+    except Exception:
+        return False, 'خطا در اتصال به ایتا'
+
+
+def _send_rubika(phone, text):
+    """ارسال با بات روبیکا (API رسمی محدود است؛ در صورت تنظیم توکن تلاش می‌شود)"""
+    token = _env('RUBIKA_BOT_TOKEN')
+    if not token:
+        return False, 'ربات روبیکا هنوز تنظیم نشده است'
+    try:
+        resp = requests.post(
+            f'https://botapi.rubika.ir/v3/bots/{token}/sendMessage',
+            json={'chat_id': phone, 'text': text}, timeout=10)
+        if resp.ok:
+            return True, 'sent'
+        return False, 'کد ارسال نشد. ابتدا در روبیکا وارد ربات شوید و دکمه Start را بزنید'
+    except Exception:
+        return False, 'خطا در اتصال به روبیکا'
+
+
+_SENDERS = {
+    'sms': _send_sms,
+    'bale': _send_bale,
+    'eitaa': _send_eitaa,
+    'rubika': _send_rubika,
+}
+
+
+def send_otp(phone, code, channel='sms'):
+    """ارسال کد تأیید از کانال انتخابی. خروجی: (موفقیت، پیام)"""
+    global MOCK_SMS
+    MOCK_SMS = _mock()
+    text = f'کد تأیید ورود شما به نانوبت: {code}'
+    _log(phone, f'[{channel}] {text}')
+    if channel == 'sms' and MOCK_SMS:
+        return True, 'sent_mock'
+    sender = _SENDERS.get(channel, _send_sms)
+    ok, msg = sender(phone, text)
+    if ok:
+        MOCK_SMS = False
+    return ok, msg
