@@ -89,8 +89,7 @@ function openMap() {
         L.tileLayer(window.TILE_URL || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
             { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(dmap);
         dmarker = L.marker([lat, lng], {
-            icon: L.divIcon({ className: 'nb-marker', iconSize: [30, 30],
-                iconAnchor: [15, 28], html: '<div class="nb-marker-pin">📍</div>' })
+            icon: (window.pinIcon ? window.pinIcon(36) : undefined)
         }).addTo(dmap);
     } else {
         dmap.setView([lat, lng], 15);
