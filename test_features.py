@@ -12,13 +12,8 @@ def get_last_otp(phone):
 
 
 def fresh_login(client, phone):
-    """درخواست OTP بدون محدودیت نرخ (حذف OTPهای قبلی) + تأیید"""
-    from models import OTP
-    OTP.query.filter_by(phone=phone).delete()
-    db.session.commit()
-    client.post('/api/otp/request', json={'phone': phone})
-    code = get_last_otp(phone)
-    r = client.post('/api/otp/verify', json={'phone': phone, 'code': code})
+    """ورود مستقیم با شماره (کد پیامکی فعلاً غیرفعال است)"""
+    r = client.post('/api/otp/request', json={'phone': phone, 'channel': 'sms'})
     return r
 
 
@@ -34,10 +29,9 @@ def main():
         r = client.get('/')
         ok.append(('GET /', r.status_code == 200))
 
-        # 2) ورود مشتری با OTP
+        # 2) ورود مشتری با شماره (بدون کد — کد پیامکی بعداً فعال می‌شود)
         r = fresh_login(client, '09120000001')
-        ok.append(('otp request', True))
-        ok.append(('otp verify', r.status_code == 200 and r.get_json()['success']))
+        ok.append(('login by phone', r.status_code == 200 and r.get_json()['success']))
 
         # 3) گرفتن نوبت برای فردا
         from datetime import date, timedelta
@@ -108,6 +102,8 @@ def main():
         for phone in ('09120000001', '09120000002'):
             for x in Reservation.query.filter_by(user_phone=phone).all():
                 db.session.delete(x)
+        # تنظیمات روزانه‌ای که در تست ساختیم هم پاک شود تا اجرای بعدی خراب نشود
+        DailyBakerySetting.query.filter_by(bakery_id=1, the_date=date.today() + timedelta(days=3)).delete()
         db.session.commit()
 
         print('\n===== TEST RESULTS =====')
