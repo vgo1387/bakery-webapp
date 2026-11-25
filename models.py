@@ -68,16 +68,46 @@ class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     phone = db.Column(db.String(20), unique=True, nullable=False)
+    name = db.Column(db.String(100), nullable=True)   # نام و نام خانوادگی (از بات/فرم دریافت می‌شود)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
 class OTP(db.Model):
     __tablename__ = 'otps'
     id = db.Column(db.Integer, primary_key=True)
-    phone = db.Column(db.String(20), nullable=False)
+    phone = db.Column(db.String(20), nullable=True)      # شماره (برای پیامک و کاربران بات که شماره دادند)
+    chat_id = db.Column(db.String(100), nullable=True)   # شناسه کاربر در بات (روبیکا/بله/ایتا)
+    channel = db.Column(db.String(20), nullable=True)    # sms / bale / eitaa / rubika
     code = db.Column(db.String(6), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     used = db.Column(db.Boolean, default=False)
+
+
+class BotUser(db.Model):
+    """نگاشت شناسه کاربر در بات به شماره موبایل و نام."""
+    __tablename__ = 'bot_users'
+    id = db.Column(db.Integer, primary_key=True)
+    chat_id = db.Column(db.String(100), unique=True, nullable=False)
+    channel = db.Column(db.String(20), nullable=False)   # bale / eitaa / rubika
+    phone = db.Column(db.String(20), nullable=True)
+    name = db.Column(db.String(100), nullable=True)
+    step = db.Column(db.String(20), default='none')   # none / waiting_name / done
+    last_msg_id = db.Column(db.String(50), nullable=True)  # آخرین update_id پردازش‌شده (جلوگیری از تکرار)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class BotSession(db.Model):
+    """سشن ورود سریع — وقتی کاربر از بات وارد میشه، یک توکن تصادفی ساخته میشه.
+    لینک: /api/bot/login?token=XXXX → لاگین خودکار + سشن عادی"""
+    __tablename__ = 'bot_sessions'
+    id = db.Column(db.Integer, primary_key=True)
+    token = db.Column(db.String(32), unique=True, nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    phone = db.Column(db.String(20), nullable=False)
+    name = db.Column(db.String(100), nullable=True)
+    channel = db.Column(db.String(20), nullable=False)
+    used = db.Column(db.Boolean, default=False)    # یک‌بار مصرف
+    expires_at = db.Column(db.DateTime, nullable=False)
 
 
 class Reservation(db.Model):

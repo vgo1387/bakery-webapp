@@ -33,39 +33,67 @@ def otp_request():
     channel = str(data.get('channel') or 'sms').strip().lower()
     if channel not in ('sms', 'bale', 'eitaa', 'rubika'):
         channel = 'sms'
-    if not phone:
-        return jsonify({'success': False, 'error': 'شماره موبایل را وارد کنید'}), 400
-
-    # اول OTPهای قبلی استفاده‌نشده را منقضی می‌کنیم تا در محدودیت نرخ حساب نشوند
-    for old in OTP.query.filter_by(phone=phone, used=False).all():
-        old.used = True
-    code = str(random.randint(1000, 9999))
-    db.session.add(OTP(phone=phone, code=code))
-
-    # محدودیت ارسال: حداکثر 5 بار در ساعت
-    recent = OTP.query.filter(
-        OTP.phone == phone,
-        OTP.created_at >= datetime.utcnow() - timedelta(hours=1)
-    ).count()
-    db.session.commit()
-    if recent >= 5:
-        return jsonify({'success': False, 'error': 'تعداد درخواست زیاد است، کمی بعد تلاش کنید'}), 429
-
-    ok, msg = sms.send_otp(phone, code, channel)
-    resp = {'success': bool(ok), 'channel': channel, 'mock': sms.MOCK_SMS}
-    if not ok:
-        if msg == 'NEEDS_START':
-            # کاربر هنوز ربات را استارت نکرده — لینک بات را برمی‌گردانیم
-            resp['error'] = 'کد ارسال نشد — اول وارد ربات شوید و دکمه Start را بزنید'
-            bot_url = sms.get_bot_url(channel)
-            if bot_url:
-                resp['bot_url'] = bot_url
-        else:
+    if channel == 'sms':
+        # ---- پیامک: ارسال کد ----
+        if not phone:
+            return jsonify({'success': False, 'error': 'شماره موبایل را وارد کنید'}), 400
+        for old in OTP.query.filter_by(phone=phone, used=False).all():
+            old.used = True
+        code = str(random.randint(1000, 9999))
+        db.session.add(OTP(phone=phone, code=code))
+        recent = OTP.query.filter(
+            OTP.phone == phone,
+            OTP.created_at >= datetime.utcnow() - timedelta(hours=1)
+        ).count()
+        db.session.commit()
+        if recent > 5:
+            return jsonify({'success': False, 'error': 'تعداد درخواست زیاد است'}), 429
+        ok, msg = sms.send_otp(phone, code, 'sms')
+        resp = {'success': bool(ok), 'channel': 'sms', 'mock': sms.MOCK_SMS}
+        if not ok:
             resp['error'] = msg
-    elif sms.MOCK_SMS and channel == 'sms':
-        # حالت آزمایشی: کد روی صفحه نمایش داده می‌شود تا ورود قابل تست باشد
-        resp['dev_code'] = code
-    return jsonify(resp)
+        elif sms.MOCK_SMS:
+            resp['dev_code'] = code
+        return jsonify(resp)
+    else:
+        # ---- بات: صفحه انتظار نشون بده + بات کد رو از طریق polling می‌فرسته ----
+        bot_url = sms.get_bot_url(channel)
+        return jsonify({
+            'success': True,
+            'channel': channel,
+            'waiting': True,
+            'bot_url': bot_url,
+        })
+
+
+@customer_bp.route('/api/bot/login', methods=['GET'])
+def bot_login():
+    """لینک ورود سریع از بات — /api/bot/login?token=XXXX
+    توکن یک‌بار مصرف ۵ دقیقه‌ای که بات می‌فرسته."""
+    from models import BotSession
+    token = request.args.get('token', '').strip()
+    if not token:
+        return redirect(url_for('customer.login_page'))
+
+    bot_session = BotSession.query.filter_by(token=token, used=False).first()
+    if not bot_session:
+        return render_template('otp_login.html', bot_error='این لینک منقضی شده یا قبلاً استفاده شده. لطفاً از بات دوباره کد بگیرید.')
+
+    if datetime.utcnow() > bot_session.expires_at:
+        return render_template('otp_login.html', bot_error='این لینک منقضی شده. لطفاً از بات دوباره کد بگیرید.')
+
+    bot_session.used = True
+    user = User.query.filter_by(phone=bot_session.phone).first()
+    if not user:
+        user = User(phone=bot_session.phone, name=bot_session.name)
+        db.session.add(user)
+    else:
+        if bot_session.name:
+            user.name = bot_session.name
+
+    db.session.commit()
+    session['user_id'] = user.id
+    return redirect(url_for('customer.index'))
 
 
 @customer_bp.route('/api/otp/verify', methods=['POST'])
@@ -74,16 +102,26 @@ def otp_verify():
     phone = str(data.get('phone') or '').strip()
     code = str(data.get('code') or '').strip()
 
-    otp = OTP.query.filter_by(phone=phone, code=code, used=False).order_by(OTP.id.desc()).first()
+    # اول با شماره و کد (حالت پیامک) — اگه کد فقط داده شده (بات)، با کد alone هم جستجو کن
+    if phone:
+        otp = OTP.query.filter_by(phone=phone, code=code, used=False).order_by(OTP.id.desc()).first()
+    else:
+        otp = OTP.query.filter_by(code=code, used=False).order_by(OTP.id.desc()).first()
+
     if not otp:
         return jsonify({'success': False, 'error': 'کد نامعتبر است'}), 400
     if datetime.utcnow() - otp.created_at > timedelta(minutes=5):
         return jsonify({'success': False, 'error': 'کد منقضی شده است'}), 400
 
     otp.used = True
-    user = User.query.filter_by(phone=phone).first()
+    user_phone = phone or (otp.phone or '')
+
+    if not user_phone:
+        return jsonify({'success': False, 'error': 'کد نامعتبر است'}), 400
+
+    user = User.query.filter_by(phone=user_phone).first()
     if not user:
-        user = User(phone=phone)
+        user = User(phone=user_phone)
         db.session.add(user)
     db.session.commit()
 

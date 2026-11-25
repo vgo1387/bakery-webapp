@@ -40,8 +40,32 @@ def create_app():
     with app.app_context():
         # مقداردهی اولیه دیتابیس (idempotent) — برای اجرا با gunicorn لازم است
         db.create_all()
+        # مایگریشن سبک: اضافه‌کردن ستون‌های جدید به جدول‌های موجود
+        from sqlalchemy import text as _text, inspect as _inspect
+        insp = _inspect(db.engine)
+        cols = [c['name'] for c in insp.get_columns('otps')]
+        if 'chat_id' not in cols:
+            db.session.execute(_text('ALTER TABLE otps ADD COLUMN chat_id VARCHAR(100)'))
+        if 'channel' not in cols:
+            db.session.execute(_text('ALTER TABLE otps ADD COLUMN channel VARCHAR(20)'))
+        ucols = [c['name'] for c in insp.get_columns('users')]
+        if 'name' not in ucols:
+            db.session.execute(_text('ALTER TABLE users ADD COLUMN name VARCHAR(100)'))
+        db.session.commit()
         from seed import seed_data
         seed_data()
+        # راه‌اندازی polling بات‌ها در پس‌زمینه (با پاس‌دادن app برای context دیتابیس)
+        try:
+            import sms
+            started = sms.start_bot_polling(app)
+            if started:
+                print(f'  [OK] Bot polling started for: {", ".join(started)}')
+            else:
+                print('  [WARN] No bot token configured — polling skipped')
+        except Exception as e:
+            import traceback
+            print(f'  [ERROR] Bot polling FAILED: {e}')
+            traceback.print_exc()
 
     from customer_routes import customer_bp
     from bakery_routes import bakery_bp
