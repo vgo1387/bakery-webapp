@@ -5,67 +5,76 @@
 <div class="auth-page">
     <div class="auth-card">
         <h1>ورود / ثبت‌نام</h1>
-        <p class="auth-sub">برای دریافت نوبت، شماره موبایل خود را وارد کنید.</p>
+        <p class="auth-sub">روش دریافت کد تأیید را انتخاب کنید.</p>
 
-        <!-- مرحله ۱: شماره -->
-        <div id="stepPhone">
+        <!-- مرحله ۱: انتخاب روش (صفحه اول) -->
+        <div id="stepChannel">
+            <div class="channel-grid">
+                <button onclick="startSMS()" class="channel-btn">📨 پیامک</button>
+                <button onclick="startBot('rubika')" class="channel-btn">🔴 روبیکا</button>
+                <button onclick="startBot('bale')" class="channel-btn">🟢 بله</button>
+                <button onclick="startBot('eitaa')" class="channel-btn">🟡 ایتا</button>
+            </div>
+            <p id="channelError" class="error-msg hidden"></p>
+        </div>
+
+        <!-- مرحله ۲الف: شماره (فقط پیامک) -->
+        <div id="stepPhone" class="hidden">
             <div class="form-group">
                 <label for="loginPhone">شماره موبایل</label>
                 <input type="tel" id="loginPhone" class="input" placeholder="مثلاً 09123456789" dir="ltr">
             </div>
-            <button onclick="goConfirm()" class="btn-primary btn-block">ادامه</button>
+            <button onclick="sendSMSCode()" class="btn-primary btn-block">ارسال کد پیامکی</button>
+            <button onclick="showStep('stepChannel')" class="btn-secondary btn-block" style="margin-top:0.6rem">→ بازگشت</button>
             <p id="otpError" class="error-msg hidden"></p>
         </div>
 
-        <!-- مرحله ۲: تأیید شماره -->
-        <div id="stepConfirm" class="hidden">
-            <p class="confirm-text">شماره شما درست است؟</p>
-            <p class="confirm-phone" dir="ltr" id="phoneEcho"></p>
-            <button onclick="goChannel()" class="btn-primary btn-block">✓ تأیید شماره</button>
-            <button onclick="showStep('stepPhone')" class="btn-secondary btn-block" style="margin-top:0.6rem">ویرایش شماره</button>
+        <!-- مرحله ۲ب: انتظار بات (روبیکا/بله/ایتا) -->
+        <div id="stepWaiting" class="hidden">
+            <p class="confirm-text" id="waitTitle">🤖 ربات نانوبت</p>
+            <p style="text-align:center;font-size:0.85rem;color:var(--text-light)">
+                وارد ربات شوید، شماره و نام خود را بفرستید تا لینک ورود مستقیم برایتان ارسال شود.
+            </p>
+            <a id="openBotBtn" class="btn-primary btn-block" href="#" target="_blank" rel="noopener"
+               style="margin:0.8rem 0;text-decoration:none">🤖 باز کردن ربات</a>
+            <div style="border-top:1px solid var(--border);padding-top:1rem">
+                <p style="text-align:center;font-size:0.82rem;color:var(--text-light);margin-bottom:0.5rem">
+                    یا کد پشتیبان که ربات فرستاده را وارد کنید:
+                </p>
+                <div class="form-group">
+                    <input type="text" id="botCode" class="input" placeholder="کد ۴ رقمی" dir="ltr" maxlength="4">
+                </div>
+                <button onclick="verifyBotCode()" class="btn-primary btn-block">ورود با کد پشتیبان</button>
+                <button onclick="showStep('stepChannel')" class="btn-secondary btn-block" style="margin-top:0.6rem">→ روش دیگر</button>
+            </div>
+            <p id="waitError" class="error-msg hidden"></p>
         </div>
 
-        <!-- مرحله ۳: انتخاب روش ارسال -->
-        <div id="stepChannel" class="hidden">
-            <p class="confirm-text">کد تأیید از کجا ارسال شود؟</p>
-            <div class="channel-grid">
-                <button onclick="sendCode('sms')" class="channel-btn">📨 پیامک</button>
-                <button onclick="sendCode('bale')" class="channel-btn">🟢 بله</button>
-                <button onclick="sendCode('eitaa')" class="channel-btn">🟡 ایتا</button>
-                <button onclick="sendCode('rubika')" class="channel-btn">🔴 روبیکا</button>
-            </div>
-            <button onclick="showStep('stepConfirm')" class="btn-secondary btn-block" style="margin-top:0.8rem">→ بازگشت</button>
-            <p id="channelError" class="error-msg hidden"></p>
-            <div id="botHelp" class="bot-help hidden">
-                <p><b>ربات را استارت نکرده‌اید:</b></p>
-                <a id="botLinkBtn" class="bot-link-btn" href="#" target="_blank" rel="noopener">🤖 رفتن به ربات و زدن Start</a>
-                <p class="bot-hint">بعد از زدن Start، به این صفحه برگردید و دوباره روی همان دکمه (مثلاً 🔴 روبیکا) بزنید تا کد ارسال شود.</p>
-            </div>
-        </div>
-
-        <!-- مرحله ۴: وارد کردن کد -->
+        <!-- مرحله ۳: کد (فقط پیامک) -->
         <div id="stepCode" class="hidden">
+            <p class="confirm-text">کد پیامک‌شده به <span dir="ltr" id="phoneEcho"></span> را وارد کنید:</p>
             <div class="form-group">
-                <label for="loginCode">کد تأیید</label>
                 <input type="text" id="loginCode" class="input" placeholder="کد ۴ رقمی" dir="ltr" maxlength="4">
             </div>
             <button onclick="verifyOtp()" class="btn-primary btn-block">ورود</button>
-            <button onclick="resendCode()" class="btn-secondary btn-block" style="margin-top:0.6rem">ارسال مجدد کد</button>
-            <button onclick="showStep('stepChannel')" class="btn-secondary btn-block" style="margin-top:0.4rem">→ بازگشت</button>
+            <button onclick="showStep('stepChannel')" class="btn-secondary btn-block" style="margin-top:0.6rem">→ روش دیگر</button>
             <p id="verifyError" class="error-msg hidden"></p>
             <div id="devCodeBox" class="mock-banner hidden">
                 حالت آزمایشی — کد شما: <b id="devCode" dir="ltr"></b>
             </div>
         </div>
+
+        {% if bot_error %}
+        <p class="error-msg" style="margin-top:1rem">{{ bot_error }}</p>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-const STEPS = ['stepPhone', 'stepConfirm', 'stepChannel', 'stepCode'];
-let currentPhone = '';
-let lastChannel = 'sms';
+const STEPS = ['stepChannel', 'stepPhone', 'stepWaiting', 'stepCode'];
+let currentChannel = 'sms';
 
 function showStep(id) {
     STEPS.forEach(s => {
@@ -73,7 +82,41 @@ function showStep(id) {
     });
 }
 
-function goConfirm() {
+function startSMS() {
+    showStep('stepPhone');
+    document.getElementById('loginPhone').focus();
+}
+
+async function startBot(channel) {
+    currentChannel = channel;
+    const err = document.getElementById('channelError');
+    err.classList.add('hidden');
+    const res = await fetch('/api/otp/request', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({channel})
+    });
+    const data = await res.json();
+    if (data.success && data.waiting) {
+        const names = {rubika: '🤖 ربات روبیکا', bale: '🤖 ربات بله', eitaa: '🤖 ربات ایتا'};
+        document.getElementById('waitTitle').textContent = names[channel] || '🤖 ربات';
+        const btn = document.getElementById('openBotBtn');
+        if (data.bot_url) {
+            btn.href = data.bot_url;
+            btn.style.display = '';
+        } else {
+            btn.style.display = 'none';
+            err.textContent = 'این ربات هنوز تنظیم نشده — از پیامک استفاده کنید';
+            err.classList.remove('hidden');
+            return;
+        }
+        showStep('stepWaiting');
+    } else {
+        err.textContent = data.error || 'خطا';
+        err.classList.remove('hidden');
+    }
+}
+
+async function sendSMSCode() {
     const phone = document.getElementById('loginPhone').value.trim();
     const err = document.getElementById('otpError');
     if (!/^09\d{9}$/.test(phone)) {
@@ -82,26 +125,14 @@ function goConfirm() {
         return;
     }
     err.classList.add('hidden');
-    currentPhone = phone;
-    document.getElementById('phoneEcho').textContent = phone;
-    showStep('stepConfirm');
-}
-
-function goChannel() {
-    showStep('stepChannel');
-}
-
-async function sendCode(channel) {
-    const err = document.getElementById('channelError');
-    err.classList.add('hidden');
     const res = await fetch('/api/otp/request', {
         method: 'POST', headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({phone: currentPhone, channel})
+        body: JSON.stringify({phone, channel: 'sms'})
     });
     const data = await res.json();
     if (data.success) {
-        lastChannel = channel;
-        showStep('stepCode');
+        currentChannel = 'sms';
+        document.getElementById('phoneEcho').textContent = phone;
         const box = document.getElementById('devCodeBox');
         if (data.dev_code) {
             document.getElementById('devCode').textContent = data.dev_code;
@@ -109,33 +140,39 @@ async function sendCode(channel) {
         } else {
             box.classList.add('hidden');
         }
+        showStep('stepCode');
         document.getElementById('loginCode').focus();
     } else {
         err.textContent = data.error || 'خطا در ارسال کد';
         err.classList.remove('hidden');
-        const help = document.getElementById('botHelp');
-        const btn = document.getElementById('botLinkBtn');
-        if (data.bot_url) {
-            btn.href = data.bot_url;
-            help.classList.remove('hidden');
-        } else {
-            help.classList.add('hidden');
-        }
     }
-}
-
-function resendCode() {
-    showStep('stepChannel');
-    sendCode(lastChannel);
 }
 
 async function verifyOtp() {
     const code = document.getElementById('loginCode').value.trim();
+    const phone = document.getElementById('phoneEcho').textContent;
     const err = document.getElementById('verifyError');
     err.classList.add('hidden');
     const res = await fetch('/api/otp/verify', {
         method: 'POST', headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({phone: currentPhone, code})
+        body: JSON.stringify({phone, code})
+    });
+    const data = await res.json();
+    if (data.success) {
+        window.location.href = '/';
+    } else {
+        err.textContent = data.error || 'کد نامعتبر است';
+        err.classList.remove('hidden');
+    }
+}
+
+async function verifyBotCode() {
+    const code = document.getElementById('botCode').value.trim();
+    const err = document.getElementById('waitError');
+    err.classList.add('hidden');
+    const res = await fetch('/api/otp/verify', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({code})
     });
     const data = await res.json();
     if (data.success) {
