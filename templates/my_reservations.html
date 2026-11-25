@@ -5,6 +5,15 @@
 <link rel="stylesheet" href="/static/leaflet/leaflet.css">
 {% endblock %}
 
+{% block page_header %}
+<header class="mini-header">
+    <div class="mini-header-content">
+        <a href="/" class="logo"><img src="/static/icons/icon-192.png" class="logo-icon" alt="نانوبت"> نانوبت</a>
+        <a href="/" class="nav-link">→ نانوایی‌ها</a>
+    </div>
+</header>
+{% endblock %}
+
 {% block content %}
 <div class="my-reservations-page">
     <h1>نوبت‌های من</h1>
@@ -27,6 +36,16 @@
         <p class="muted">این QR یا کد را هنگام مراجعه به نانوایی نشان دهید.</p>
     </div>
 </div>
+{% endblock %}
+
+{% block page_footer %}
+{% if user %}
+<nav class="tab-bar">
+    <a href="/" class="tab-item"><span class="tab-icon">🏪</span><span class="tab-label">نانوایی‌ها</span></a>
+    <a href="/my-reservations" class="tab-item active"><span class="tab-icon">📋</span><span class="tab-label">نوبت‌ها</span></a>
+    <a href="/customer/settings" class="tab-item"><span class="tab-icon">⚙️</span><span class="tab-label">تنظیمات</span></a>
+</nav>
+{% endif %}
 {% endblock %}
 
 {% block scripts %}

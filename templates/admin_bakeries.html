@@ -2,18 +2,27 @@
 {% block title %}مدیریت نانوایی‌ها{% endblock %}
 
 {% block content %}
-<div class="admin-page">
-    <div class="admin-header">
-        <h1>مدیریت نانوایی‌ها</h1>
-        <a href="/admin/bakeries/new" class="btn-primary">+ ثبت نانوایی جدید</a>
-    </div>
+<div class="admin-shell">
+    <aside class="admin-sidebar">
+        <div class="admin-brand">
+            <img src="/static/icons/icon-192.png" class="logo-icon" alt="">
+            <b>نانوبت</b>
+        </div>
+        <nav class="admin-side-nav">
+            <a href="/admin">📊 داشبورد</a>
+            <a href="/admin/bakeries" class="active">🏪 نانوایی‌ها</a>
+            <a href="/admin/customers">👥 مشتری‌ها</a>
+        </nav>
+        <a href="/admin/logout" class="admin-exit">🚪 خروج</a>
+    </aside>
 
-    <nav class="admin-nav">
-        <a href="/admin">داشبورد</a>
-        <a href="/admin/bakeries" class="active">نانوایی‌ها</a>
-    </nav>
+    <div class="admin-main">
+        <div class="admin-header">
+            <h1>مدیریت نانوایی‌ها</h1>
+            <a href="/admin/bakeries/new" class="btn-primary">+ ثبت نانوایی جدید</a>
+        </div>
 
-    <div class="panel">
+        <div class="panel">
         <table class="admin-table">
             <tr>
                 <th>نام</th><th>نام کاربری</th><th>نوع</th><th>ظرفیت</th><th>فعال</th><th>عملیات</th>
@@ -38,6 +47,7 @@
             {% endfor %}
         </table>
     </div>
+</div>
 </div>
 {% endblock %}
 

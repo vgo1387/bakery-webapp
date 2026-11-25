@@ -12,7 +12,7 @@
     </div>
 
     <!-- کنترل ظرفیت امروز -->
-    <div class="capacity-panel">
+    <div class="capacity-panel" id="settings">
         <h3>مدیریت امروز ({{ today_jalali }})</h3>
         <div class="capacity-stats">
             <div class="stat-box">
@@ -46,7 +46,7 @@
     </div>
 
     <!-- مدیریت ظرفیت روزهای آینده -->
-    <h2 class="section-title">ظرفیت روزهای آینده</h2>
+    <h2 class="section-title" id="days">ظرفیت روزهای آینده</h2>
     <div class="days-manager">
         {% for d in days %}
         <div class="day-row {% if d.is_today %}day-today{% endif %}">
@@ -114,6 +114,14 @@
         <p id="verifyResult" class="error-msg hidden"></p>
     </div>
 </div>
+{% endblock %}
+
+{% block page_footer %}
+<nav class="tab-bar">
+    <a href="/bakery" class="tab-item active"><span class="tab-icon">📊</span><span class="tab-label">نوبت</span></a>
+    <a href="/bakery#days" class="tab-item"><span class="tab-icon">📅</span><span class="tab-label">تقویم</span></a>
+    <a href="/bakery#settings" class="tab-item"><span class="tab-icon">⚙️</span><span class="tab-label">تنظیمات</span></a>
+</nav>
 {% endblock %}
 
 {% block scripts %}

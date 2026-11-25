@@ -5,6 +5,21 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='leaflet/leaflet.css') }}">
 {% endblock %}
 
+{% block page_header %}
+<header class="mini-header">
+    <div class="mini-header-content">
+        <a href="/" class="logo"><img src="/static/icons/icon-192.png" class="logo-icon" alt="نانوبت"> نانوبت</a>
+        {% if user %}
+            <a href="/my-reservations" class="bell-link" title="اعلان‌ها">
+                🔔<span class="bell-badge hidden" id="bellBadge">۰</span>
+            </a>
+        {% else %}
+            <a href="/login" class="nav-link btn-nav-login">ورود</a>
+        {% endif %}
+    </div>
+</header>
+{% endblock %}
+
 {% block content %}
 <div class="map-container">
     <div id="map" dir="ltr"></div>
@@ -48,6 +63,22 @@
         <div id="bakeryDetailContent"></div>
     </div>
 </div>
+{% endblock %}
+
+{% block page_footer %}
+{% if user %}
+<nav class="tab-bar">
+    <a href="/" class="tab-item active"><span class="tab-icon">🏪</span><span class="tab-label">نانوایی‌ها</span></a>
+    <a href="/my-reservations" class="tab-item"><span class="tab-icon">📋</span><span class="tab-label">نوبت‌ها</span></a>
+    <a href="/customer/settings" class="tab-item"><span class="tab-icon">⚙️</span><span class="tab-label">تنظیمات</span></a>
+</nav>
+{% else %}
+<nav class="tab-bar">
+    <a href="/" class="tab-item active"><span class="tab-icon">🏪</span><span class="tab-label">نانوایی‌ها</span></a>
+    <a href="/bakery/login" class="tab-item"><span class="tab-icon">👨‍🍳</span><span class="tab-label">پنل نانوا</span></a>
+    <a href="/login" class="tab-item"><span class="tab-icon">👤</span><span class="tab-label">ورود</span></a>
+</nav>
+{% endif %}
 {% endblock %}
 
 {% block scripts %}

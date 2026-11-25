@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}تنظیمات{% endblock %}
+
+{% block page_header %}
+<header class="mini-header">
+    <div class="mini-header-content">
+        <a href="/" class="logo"><img src="/static/icons/icon-192.png" class="logo-icon" alt="نانوبت"> نانوبت</a>
+        <a href="/" class="nav-link">→ نانوایی‌ها</a>
+    </div>
+</header>
+{% endblock %}
+
+{% block content %}
+<div class="settings-page">
+    <h1>⚙️ تنظیمات</h1>
+
+    <div class="settings-card">
+        <h3>👤 حساب</h3>
+        <div class="settings-row">
+            <span class="settings-label">شماره موبایل</span>
+            <span class="settings-value" dir="ltr">{{ user.phone }}</span>
+        </div>
+        {% if user.name %}
+        <div class="settings-row">
+            <span class="settings-label">نام</span>
+            <span class="settings-value">{{ user.name }}</span>
+        </div>
+        {% endif %}
+        <div class="settings-row">
+            <span class="settings-label">مکان ثبت‌شده</span>
+            <span class="settings-value" dir="ltr">
+                {% if user.latitude %}{{ '%.4f'|format(user.latitude) }}, {{ '%.4f'|format(user.longitude) }}{% else %}ثبت نشده{% endif %}
+            </span>
+        </div>
+        <a href="/customer/settings/edit" class="btn-secondary btn-block" style="margin-top:0.8rem">✏️ ویرایش پروفایل</a>
+    </div>
+
+    <div class="settings-card">
+        <h3>📍 مکان</h3>
+        <p style="font-size:0.85rem;color:var(--text-light);margin-bottom:0.6rem">
+            برای تغییر مکان خود، از نقشه استفاده کنید یا موقعیت فعلی خود را تأیید کنید.
+        </p>
+        <a href="/customer/location" class="btn-primary btn-block">🗺 تغییر مکان من</a>
+    </div>
+
+    <div class="settings-card">
+        <h3>🎧 پشتیبانی</h3>
+        <p style="font-size:0.85rem;color:var(--text-light)">این بخش به‌زودی فعال می‌شود.</p>
+        <button class="btn-secondary btn-block" disabled>🎧 تماس با پشتیبانی</button>
+    </div>
+
+    <div class="settings-card">
+        <h3>🚪 حساب</h3>
+        <a href="/logout" class="btn-cancel btn-block">خروج از حساب</a>
+    </div>
+</div>
+{% endblock %}
+
+{% block page_footer %}
+<nav class="tab-bar">
+    <a href="/" class="tab-item"><span class="tab-icon">🏪</span><span class="tab-label">نانوایی‌ها</span></a>
+    <a href="/my-reservations" class="tab-item"><span class="tab-icon">📋</span><span class="tab-label">نوبت‌ها</span></a>
+    <a href="/customer/settings" class="tab-item active"><span class="tab-icon">⚙️</span><span class="tab-label">تنظیمات</span></a>
+</nav>
+{% endblock %}

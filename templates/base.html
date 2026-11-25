@@ -32,31 +32,13 @@
     <button id="backFab" class="back-fab" title="بازگشت" aria-label="بازگشت"
             onclick="if (history.length > 1) { history.back(); } else { location.href = '/'; }">→</button>
 
-    <header class="header">
-        <div class="header-content">
-            <a href="/" class="logo"><img src="/static/icons/icon-192.png" class="logo-icon" alt="نانوبت"> نانوبت</a>
-            <nav class="nav">
-                <a href="/" class="nav-link">نانوایی‌ها</a>
-                <a href="/my-reservations" class="nav-link">نوبت‌های من</a>
-                {% if user %}
-                    <a href="/my-reservations" class="bell-link" title="اعلان‌ها">
-                        🔔<span class="bell-badge hidden" id="bellBadge">۰</span>
-                    </a>
-                {% endif %}
-                <a href="/bakery/login" class="nav-link">پنل نانوا</a>
-                {% if user %}
-                    <span class="nav-user">{{ user.phone }}</span>
-                    <a href="/logout" class="nav-link">خروج</a>
-                {% else %}
-                    <a href="/login" class="nav-link btn-nav-login">ورود</a>
-                {% endif %}
-            </nav>
-        </div>
-    </header>
+    {% block page_header %}{% endblock %}
 
     <main class="main">
         {% block content %}{% endblock %}
     </main>
+
+    {% block page_footer %}{% endblock %}
 
     <script>window.TILE_URL = {{ (tile_url or 'https://tile.openstreetmap.org/{z}/{x}/{y}.png')|tojson }};</script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>

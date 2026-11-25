@@ -2,41 +2,34 @@
 {% block title %}داشبورد مدیریت{% endblock %}
 
 {% block content %}
-<div class="admin-page">
-    <div class="admin-header">
-        <h1>پنل مدیریت سامانه</h1>
-        <a href="/admin/logout" class="btn-small">خروج</a>
-    </div>
-
-    <nav class="admin-nav">
-        <a href="/admin" class="active">داشبورد</a>
-        <a href="/admin/bakeries">نانوایی‌ها</a>
-        <a href="/admin/bakeries/new">+ ثبت نانوایی</a>
-    </nav>
-
-    <div class="stats-grid">
-        <div class="stat-card"><span class="stat-big">{{ total_bakeries }}</span><span>کل نانوایی‌ها</span></div>
-        <div class="stat-card"><span class="stat-big">{{ active_bakeries }}</span><span>فعال</span></div>
-        <div class="stat-card"><span class="stat-big">{{ total_users }}</span><span>کاربران</span></div>
-        <div class="stat-card"><span class="stat-big">{{ total_reservations }}</span><span>کل نوبت‌ها</span></div>
-        <div class="stat-card"><span class="stat-big">{{ today_reservations }}</span><span>نوبت‌های امروز</span></div>
-    </div>
-
-    <div class="admin-two-col">
-        <div class="panel">
-            <h3>نانوایی‌ها</h3>
-            <table class="admin-table">
-                <tr><th>نام</th><th>وضعیت</th><th>رمز/نام کاربری</th></tr>
-                {% for b in bakeries %}
-                <tr>
-                    <td>{{ b.name }}</td>
-                    <td>{{ 'فعال' if b.is_active else 'غیرفعال' }} | {{ 'سهمیه‌ای' if b.bakery_type=='share' else 'آزاد' }}</td>
-                    <td dir="ltr">{{ b.username }}</td>
-                </tr>
-                {% endfor %}
-            </table>
+<div class="admin-shell">
+    <aside class="admin-sidebar">
+        <div class="admin-brand">
+            <img src="/static/icons/icon-192.png" class="logo-icon" alt="">
+            <b>نانوبت</b>
         </div>
-        <div class="panel">
+        <nav class="admin-side-nav">
+            <a href="/admin" class="active">📊 داشبورد</a>
+            <a href="/admin/bakeries">🏪 نانوایی‌ها</a>
+            <a href="/admin/customers">👥 مشتری‌ها</a>
+        </nav>
+        <a href="/admin/logout" class="admin-exit">🚪 خروج</a>
+    </aside>
+
+    <div class="admin-main">
+        <div class="admin-header">
+            <h1>پنل مدیریت سامانه</h1>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card"><span class="stat-big">{{ total_bakeries }}</span><span>کل نانوایی‌ها</span></div>
+            <div class="stat-card"><span class="stat-big">{{ active_bakeries }}</span><span>فعال</span></div>
+            <div class="stat-card"><span class="stat-big">{{ total_users }}</span><span>کاربران</span></div>
+            <div class="stat-card"><span class="stat-big">{{ total_reservations }}</span><span>کل نوبت‌ها</span></div>
+            <div class="stat-card"><span class="stat-big">{{ today_reservations }}</span><span>نوبت‌های امروز</span></div>
+        </div>
+
+        <div class="panel" style="margin-top:1rem">
             <h3>آخرین نوبت‌ها</h3>
             <table class="admin-table">
                 <tr><th>کد</th><th>نانوایی</th><th>شماره</th><th>تاریخ</th><th>وضعیت</th></tr>

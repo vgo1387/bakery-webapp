@@ -32,3 +32,13 @@
 </div>
 {% endblock %}
 
+{% block page_footer %}
+{% if user %}
+<nav class="tab-bar">
+    <a href="/" class="tab-item"><span class="tab-icon">🏪</span><span class="tab-label">نانوایی‌ها</span></a>
+    <a href="/my-reservations" class="tab-item active"><span class="tab-icon">📋</span><span class="tab-label">نوبت‌ها</span></a>
+    <a href="/customer/settings" class="tab-item"><span class="tab-icon">⚙️</span><span class="tab-label">تنظیمات</span></a>
+</nav>
+{% endif %}
+{% endblock %}
+

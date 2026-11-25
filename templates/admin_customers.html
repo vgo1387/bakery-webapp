@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}مدیریت مشتری‌ها{% endblock %}
+
+{% block content %}
+<div class="admin-shell">
+    <aside class="admin-sidebar">
+        <div class="admin-brand">
+            <img src="/static/icons/icon-192.png" class="logo-icon" alt="">
+            <b>نانوبت</b>
+        </div>
+        <nav class="admin-side-nav">
+            <a href="/admin">📊 داشبورد</a>
+            <a href="/admin/bakeries">🏪 نانوایی‌ها</a>
+            <a href="/admin/customers" class="active">👥 مشتری‌ها</a>
+        </nav>
+        <a href="/admin/logout" class="admin-exit">🚪 خروج</a>
+    </aside>
+
+    <div class="admin-main">
+        <div class="admin-header">
+            <h1>مدیریت مشتری‌ها</h1>
+        </div>
+
+        <div class="panel">
+            <table class="admin-table">
+                <tr>
+                    <th>شماره موبایل</th><th>نام</th><th>تعداد نوبت</th><th>عضویت</th><th>عملیات</th>
+                </tr>
+                {% for u in users %}
+                <tr>
+                    <td dir="ltr">{{ u.phone }}</td>
+                    <td>{{ u.name or '—' }}</td>
+                    <td>{{ u.reservation_count }}</td>
+                    <td dir="ltr">{{ u.created_at.strftime('%Y-%m-%d') if u.created_at else '—' }}</td>
+                    <td class="table-actions">
+                        <button class="btn-small" onclick="showDetail({{ u.id }})">جزئیات</button>
+                        <form method="post" action="/admin/customers/{{ u.id }}/delete" style="display:inline"
+                              onsubmit="return confirm('این مشتری حذف شود؟ نوبت‌هایش هم حذف می‌شود.')">
+                            <button class="btn-small btn-cancel">حذف</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+                {% if not users %}
+                <tr><td colspan="5" class="muted">هیچ مشتری‌ای ثبت نشده است.</td></tr>
+                {% endif %}
+            </table>
+        </div>
+    </div>
+</div>
+
+<div id="custModal" class="modal-overlay hidden" onclick="if(event.target===this)closeDetail()">
+    <div class="modal-box" style="max-width:520px;text-align:right">
+        <button class="modal-close" onclick="closeDetail()">✕</button>
+        <h3>جزئیات مشتری</h3>
+        <div id="custDetailBody" style="font-size:0.9rem"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const custData = {{ customers_json|safe }};
+function showDetail(id) {
+    const u = custData.find(x => x.id === id);
+    if (!u) return;
+    let html = `
+        <div class="settings-row"><span class="settings-label">شماره</span><span class="settings-value" dir="ltr">${u.phone}</span></div>
+        <div class="settings-row"><span class="settings-label">نام</span><span class="settings-value">${u.name || '—'}</span></div>
+        <div class="settings-row"><span class="settings-label">مکان</span><span class="settings-value" dir="ltr">${u.location}</span></div>
+        <h3 style="margin:0.9rem 0 0.4rem">نوبت‌ها (${u.reservations.length})</h3>
+        <div style="max-height:260px;overflow-y:auto">
+    `;
+    if (u.reservations.length === 0) {
+        html += '<p class="muted">نوبتی ندارد.</p>';
+    } else {
+        for (const r of u.reservations) {
+            html += `
+            <div class="settings-row">
+                <span dir="ltr">${r.code}</span>
+                <span>${r.bakery} — ${r.date} — ${r.status}</span>
+            </div>`;
+        }
+    }
+    html += '</div>';
+    document.getElementById('custDetailBody').innerHTML = html;
+    document.getElementById('custModal').classList.remove('hidden');
+}
+function closeDetail() {
+    document.getElementById('custModal').classList.add('hidden');
+}
+</script>
+{% endblock %}
