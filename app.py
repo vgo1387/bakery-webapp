@@ -51,6 +51,10 @@ def create_app():
         ucols = [c['name'] for c in insp.get_columns('users')]
         if 'name' not in ucols:
             db.session.execute(_text('ALTER TABLE users ADD COLUMN name VARCHAR(100)'))
+        if 'latitude' not in ucols:
+            db.session.execute(_text('ALTER TABLE users ADD COLUMN latitude FLOAT'))
+        if 'longitude' not in ucols:
+            db.session.execute(_text('ALTER TABLE users ADD COLUMN longitude FLOAT'))
         db.session.commit()
         from seed import seed_data
         seed_data()

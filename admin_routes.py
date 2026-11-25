@@ -56,6 +56,50 @@ def bakeries_list():
     return render_template('admin_bakeries.html', bakeries=bakeries)
 
 
+# ---------- مدیریت مشتری‌ها ----------
+@admin_bp.route('/admin/customers')
+def customers_list():
+    if not is_admin():
+        return redirect(url_for('admin.login'))
+    import json
+    users = User.query.order_by(User.id.desc()).all()
+    customers_json = []
+    for u in users:
+        reservations = Reservation.query.filter_by(user_phone=u.phone).order_by(
+            Reservation.created_at.desc()).all()
+        customers_json.append({
+            'id': u.id,
+            'phone': u.phone,
+            'name': u.name,
+            'location': (f"{u.latitude:.4f}, {u.longitude:.4f}"
+                         if u.latitude is not None and u.longitude is not None else 'ثبت نشده'),
+            'reservations': [
+                {
+                    'code': r.code,
+                    'bakery': r.bakery.name if r.bakery else '—',
+                    'date': str(r.reservation_date),
+                    'status': r.status,
+                } for r in reservations
+            ],
+        })
+    return render_template(
+        'admin_customers.html',
+        users=users,
+        customers_json=json.dumps(customers_json, ensure_ascii=False),
+    )
+
+
+@admin_bp.route('/admin/customers/<int:user_id>/delete', methods=['POST'])
+def customer_delete(user_id):
+    if not is_admin():
+        return redirect(url_for('admin.login'))
+    user = User.query.get_or_404(user_id)
+    Reservation.query.filter_by(user_phone=user.phone).delete()
+    db.session.delete(user)
+    db.session.commit()
+    return redirect(url_for('admin.customers_list'))
+
+
 @admin_bp.route('/admin/bakeries/new', methods=['GET', 'POST'])
 def bakery_new():
     if not is_admin():

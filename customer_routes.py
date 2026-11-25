@@ -10,6 +10,9 @@ customer_bp = Blueprint('customer', __name__)
 @customer_bp.route('/')
 def index():
     user = current_user()
+    # مکان اجباری: اگه لاگینه ولی مکان ثبت نکرده → صفحه مکان
+    if user and not user.has_location:
+        return redirect(url_for('customer.location_page'))
     return render_template('index.html', user=user)
 
 
@@ -93,6 +96,9 @@ def bot_login():
 
     db.session.commit()
     session['user_id'] = user.id
+    # مکان اجباری بعد از ورود اولیه
+    if not user.has_location:
+        return redirect(url_for('customer.location_page'))
     return redirect(url_for('customer.index'))
 
 
@@ -126,13 +132,96 @@ def otp_verify():
     db.session.commit()
 
     session['user_id'] = user.id
-    return jsonify({'success': True})
+    # مکان اجباری بعد از ورود (فرانت با success + need_location هندل می‌کند)
+    return jsonify({'success': True, 'need_location': not user.has_location})
 
 
 @customer_bp.route('/logout')
 def logout():
     session.pop('user_id', None)
     return redirect(url_for('customer.index'))
+
+
+# ---------- موقعیت اجباری مشتری ----------
+@customer_bp.route('/customer/location', methods=['GET', 'POST'])
+def location_page():
+    user = current_user()
+    if not user:
+        return redirect(url_for('customer.login_page'))
+    has_location = user.latitude is not None and user.longitude is not None
+    if request.method == 'POST':
+        data = request.get_json(silent=True) or {}
+        try:
+            lat = float(data.get('latitude'))
+            lng = float(data.get('longitude'))
+        except (TypeError, ValueError):
+            return jsonify({'success': False, 'error': 'مختصات نامعتبر'}), 400
+        if not (-90 <= lat <= 90 and -180 <= lng <= 180):
+            return jsonify({'success': False, 'error': 'مختصات خارج از محدوده'}), 400
+        user.latitude = lat
+        user.longitude = lng
+        db.session.commit()
+        return jsonify({'success': True})
+    return render_template('customer_location.html', user=user, has_location=has_location)
+
+
+# ---------- تنظیمات مشتری ----------
+@customer_bp.route('/customer/settings', methods=['GET', 'POST'])
+def settings_page():
+    user = current_user()
+    if not user:
+        return redirect(url_for('customer.login_page'))
+    saved = False
+    if request.method == 'POST':
+        name = (request.form.get('name') or '').strip()
+        if name:
+            user.name = name[:100]
+        db.session.commit()
+        saved = True
+    return render_template('customer_settings.html', user=user, saved=saved)
+
+
+@customer_bp.route('/customer/settings/edit')
+def profile_edit_page():
+    user = current_user()
+    if not user:
+        return redirect(url_for('customer.login_page'))
+    return render_template('customer_profile_edit.html', user=user)
+
+
+# ---------- API: ذخیره مکان (از صفحه مکان) ----------
+@customer_bp.route('/api/customer/location/save', methods=['POST'])
+def api_save_location():
+    user = current_user()
+    if not user:
+        return jsonify({'success': False, 'error': 'ابتدا وارد شوید'}), 401
+    data = request.get_json(silent=True) or {}
+    try:
+        lat = float(data.get('latitude'))
+        lng = float(data.get('longitude'))
+    except (TypeError, ValueError):
+        return jsonify({'success': False, 'error': 'مختصات نامعتبر'}), 400
+    if not (-90 <= lat <= 90 and -180 <= lng <= 180):
+        return jsonify({'success': False, 'error': 'مختصات خارج از محدوده'}), 400
+    user.latitude = lat
+    user.longitude = lng
+    db.session.commit()
+    return jsonify({'success': True})
+
+
+# ---------- API: ذخیره پروفایل ----------
+@customer_bp.route('/api/customer/profile/save', methods=['POST'])
+def api_save_profile():
+    user = current_user()
+    if not user:
+        return jsonify({'success': False, 'error': 'ابتدا وارد شوید'}), 401
+    data = request.get_json(silent=True) or {}
+    name = (data.get('name') or '').strip()
+    if not name:
+        return jsonify({'success': False, 'error': 'نام را وارد کنید'}), 400
+    user.name = name[:100]
+    db.session.commit()
+    return jsonify({'success': True})
 
 
 @customer_bp.route('/bakeries/<int:bakery_id>')
@@ -155,7 +244,8 @@ def confirmation_page(code):
     reservation = Reservation.query.filter_by(code=code).first_or_404()
     from utils import qr_svg_base64
     qr_data = qr_svg_base64(reservation.delivery_code)
-    return render_template('confirmation.html', r=reservation, bakery=reservation.bakery, qr_data=qr_data)
+    return render_template('confirmation.html', r=reservation, bakery=reservation.bakery,
+                           qr_data=qr_data, user=current_user())
 
 
 # ---------- Bakeries & reservations ----------
@@ -280,6 +370,8 @@ def api_notifications_count():
 @customer_bp.route('/my-reservations')
 def my_reservations_page():
     user = current_user()
+    if user and not user.has_location:
+        return redirect(url_for('customer.location_page'))
     return render_template('my_reservations.html', user=user)
 
 

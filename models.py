@@ -69,7 +69,13 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     phone = db.Column(db.String(20), unique=True, nullable=False)
     name = db.Column(db.String(100), nullable=True)   # نام و نام خانوادگی (از بات/فرم دریافت می‌شود)
+    latitude = db.Column(db.Float, nullable=True)     # موقعیت مشتری (اجباری بعد از ورود)
+    longitude = db.Column(db.Float, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    @property
+    def has_location(self):
+        return self.latitude is not None and self.longitude is not None
 
 
 class OTP(db.Model):
