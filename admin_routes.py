@@ -56,6 +56,24 @@ def bakeries_list():
     return render_template('admin_bakeries.html', bakeries=bakeries)
 
 
+@admin_bp.route('/admin/bakeries/<int:bakery_id>')
+def bakery_detail(bakery_id):
+    if not is_admin():
+        return redirect(url_for('admin.login'))
+    bakery = Bakery.query.get_or_404(bakery_id)
+    reservations = Reservation.query.filter_by(bakery_id=bakery.id).order_by(
+        Reservation.created_at.desc()).limit(50).all()
+    total_res = Reservation.query.filter_by(bakery_id=bakery.id).count()
+    user_ids = {r.user_id for r in reservations if r.user_id}
+    users_map = {}
+    if user_ids:
+        for u in User.query.filter(User.id.in_(user_ids)).all():
+            users_map[u.id] = u.name or '—'
+    return render_template('admin_bakery_detail.html', bakery=bakery,
+                           reservations=reservations, total_res=total_res,
+                           users_map=users_map)
+
+
 # ---------- مدیریت مشتری‌ها ----------
 @admin_bp.route('/admin/customers')
 def customers_list():
@@ -71,8 +89,9 @@ def customers_list():
             'id': u.id,
             'phone': u.phone,
             'name': u.name,
-            'location': (f"{u.latitude:.4f}, {u.longitude:.4f}"
-                         if u.latitude is not None and u.longitude is not None else 'ثبت نشده'),
+            'lat': u.latitude,
+            'lng': u.longitude,
+            'has_location': u.latitude is not None and u.longitude is not None,
             'reservations': [
                 {
                     'code': r.code,
