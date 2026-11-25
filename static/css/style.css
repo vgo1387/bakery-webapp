@@ -657,3 +657,8 @@ a { color: inherit; }
     .detail-grid { grid-template-columns: 1fr; }
     .detail-item.span2 { grid-column: span 1; }
 }
+
+/* ---------- Login code box (disabled for now) ---------- */
+.code-disabled-box { margin-top: 1.2rem; opacity: 0.55; }
+.code-disabled-box .input { background: #f2f4f0; cursor: not-allowed; }
+.code-note { font-size: 0.75rem; color: var(--text-light); margin-top: 0.35rem; }
