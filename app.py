@@ -58,14 +58,18 @@ def create_app():
         db.session.commit()
         from seed import seed_data
         seed_data()
-        # راه‌اندازی polling بات‌ها در پس‌زمینه (با پاس‌دادن app برای context دیتابیس)
+        # بات‌ها: فعلاً خاموش — برای فعال‌سازی متغیر محیطی BOTS_ENABLED=1 را ست کنید
         try:
-            import sms
-            started = sms.start_bot_polling(app)
-            if started:
-                print(f'  [OK] Bot polling started for: {", ".join(started)}')
+            import os as _os
+            if _os.environ.get('BOTS_ENABLED', '') == '1':
+                import sms
+                started = sms.start_bot_polling(app)
+                if started:
+                    print(f'  [OK] Bot polling started for: {", ".join(started)}')
+                else:
+                    print('  [WARN] No bot token configured — polling skipped')
             else:
-                print('  [WARN] No bot token configured — polling skipped')
+                print('  [INFO] Bots are OFFLINE (set BOTS_ENABLED=1 to enable)')
         except Exception as e:
             import traceback
             print(f'  [ERROR] Bot polling FAILED: {e}')
