@@ -31,42 +31,20 @@ def login_page():
 
 @customer_bp.route('/api/otp/request', methods=['POST'])
 def otp_request():
+    """ورود ساده با شماره موبایل (کد پیامکی به‌زودی فعال می‌شود)"""
     data = request.get_json(silent=True) or {}
     phone = str(data.get('phone') or '').strip()
-    channel = str(data.get('channel') or 'sms').strip().lower()
-    if channel not in ('sms', 'bale', 'eitaa', 'rubika'):
-        channel = 'sms'
-    if channel == 'sms':
-        # ---- پیامک: ارسال کد ----
-        if not phone:
-            return jsonify({'success': False, 'error': 'شماره موبایل را وارد کنید'}), 400
-        for old in OTP.query.filter_by(phone=phone, used=False).all():
-            old.used = True
-        code = str(random.randint(1000, 9999))
-        db.session.add(OTP(phone=phone, code=code))
-        recent = OTP.query.filter(
-            OTP.phone == phone,
-            OTP.created_at >= datetime.utcnow() - timedelta(hours=1)
-        ).count()
-        db.session.commit()
-        if recent > 5:
-            return jsonify({'success': False, 'error': 'تعداد درخواست زیاد است'}), 429
-        ok, msg = sms.send_otp(phone, code, 'sms')
-        resp = {'success': bool(ok), 'channel': 'sms', 'mock': sms.MOCK_SMS}
-        if not ok:
-            resp['error'] = msg
-        elif sms.MOCK_SMS:
-            resp['dev_code'] = code
-        return jsonify(resp)
-    else:
-        # ---- بات: صفحه انتظار نشون بده + بات کد رو از طریق polling می‌فرسته ----
-        bot_url = sms.get_bot_url(channel)
-        return jsonify({
-            'success': True,
-            'channel': channel,
-            'waiting': True,
-            'bot_url': bot_url,
-        })
+    if not (len(phone) == 11 and phone.startswith('09') and phone.isdigit()):
+        return jsonify({'success': False, 'error': 'شماره موبایل معتبر وارد کنید'}), 400
+
+    # ثبت‌نام خودکار در صورت نبود کاربر + ورود مستقیم
+    user = User.query.filter_by(phone=phone).first()
+    if not user:
+        user = User(phone=phone)
+        db.session.add(user)
+    db.session.commit()
+    session['user_id'] = user.id
+    return jsonify({'success': True, 'need_location': not user.has_location})
 
 
 @customer_bp.route('/api/bot/login', methods=['GET'])
