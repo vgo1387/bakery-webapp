@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 {% block title %}مدیریت مشتری‌ها{% endblock %}
 
+{% block head %}
+<link rel="stylesheet" href="/static/leaflet/leaflet.css">
+{% endblock %}
+
 {% block content %}
 <div class="admin-shell">
     <aside class="admin-sidebar">
@@ -56,21 +60,41 @@
         <div id="custDetailBody" style="font-size:0.9rem"></div>
     </div>
 </div>
+
+<!-- مودال نقشه مکان مشتری -->
+<div id="custMapModal" class="modal-overlay hidden" onclick="if(event.target===this)closeCustMap()">
+    <div class="modal-box" style="max-width:520px">
+        <button class="modal-close" onclick="closeCustMap()">✕</button>
+        <h3>مکان مشتری</h3>
+        <div id="custMap" class="modal-map" dir="ltr"></div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
+<script src="/static/leaflet/leaflet.js"></script>
 <script>
 const custData = {{ customers_json|safe }};
+let custMap = null, custMarker = null;
+
 function showDetail(id) {
     const u = custData.find(x => x.id === id);
     if (!u) return;
     let html = `
         <div class="settings-row"><span class="settings-label">شماره</span><span class="settings-value" dir="ltr">${u.phone}</span></div>
         <div class="settings-row"><span class="settings-label">نام</span><span class="settings-value">${u.name || '—'}</span></div>
-        <div class="settings-row"><span class="settings-label">مکان</span><span class="settings-value" dir="ltr">${u.location}</span></div>
-        <h3 style="margin:0.9rem 0 0.4rem">نوبت‌ها (${u.reservations.length})</h3>
-        <div style="max-height:260px;overflow-y:auto">
     `;
+    if (u.has_location) {
+        html += `
+        <div class="settings-row">
+            <span class="settings-label">مکان</span>
+            <button class="btn-small" onclick="showCustMap(${u.id})">🗺 مشاهده روی نقشه</button>
+        </div>`;
+    } else {
+        html += `<div class="settings-row"><span class="settings-label">مکان</span><span class="settings-value muted">ثبت نشده</span></div>`;
+    }
+    html += `<h3 style="margin:0.9rem 0 0.4rem">نوبت‌ها (${u.reservations.length})</h3>
+        <div style="max-height:260px;overflow-y:auto">`;
     if (u.reservations.length === 0) {
         html += '<p class="muted">نوبتی ندارد.</p>';
     } else {
@@ -86,8 +110,34 @@ function showDetail(id) {
     document.getElementById('custDetailBody').innerHTML = html;
     document.getElementById('custModal').classList.remove('hidden');
 }
+
+function showCustMap(id) {
+    const u = custData.find(x => x.id === id);
+    if (!u || !u.has_location) return;
+    document.getElementById('custMapModal').classList.remove('hidden');
+    const lat = u.lat, lng = u.lng;
+    if (!custMap) {
+        custMap = L.map('custMap').setView([lat, lng], 15);
+        L.tileLayer(window.TILE_URL || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+            { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(custMap);
+        custMarker = L.marker([lat, lng], {
+            icon: L.divIcon({ className: 'nb-marker', iconSize: [30, 30],
+                iconAnchor: [15, 28], html: '<div class="nb-marker-pin">📍</div>' })
+        }).addTo(custMap);
+    } else {
+        custMap.setView([lat, lng], 15);
+        custMarker.setLatLng([lat, lng]);
+    }
+    setTimeout(() => custMap.invalidateSize(), 150);
+}
+
+function closeCustMap() {
+    document.getElementById('custMapModal').classList.add('hidden');
+}
+
 function closeDetail() {
     document.getElementById('custModal').classList.add('hidden');
 }
+
 </script>
 {% endblock %}

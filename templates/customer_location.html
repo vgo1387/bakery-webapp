@@ -26,17 +26,7 @@
         </p>
 
         <div id="map" class="loc-map" dir="ltr"></div>
-
-        <div class="loc-row">
-            <div class="loc-field">
-                <label>عرض جغرافیایی</label>
-                <input type="text" id="latInput" class="input" dir="ltr" value="35.7448" readonly>
-            </div>
-            <div class="loc-field">
-                <label>طول جغرافیایی</label>
-                <input type="text" id="lngInput" class="input" dir="ltr" value="51.3753" readonly>
-            </div>
-        </div>
+        <p id="locPicked" class="loc-picked">مکان انتخاب‌شده: <b dir="ltr">—</b></p>
 
         <button id="btnGps" class="btn-secondary btn-block" style="margin-top:0.8rem"
                 onclick="useMyLocation()">📱 موقعیت من (GPS)</button>
@@ -51,8 +41,8 @@
     <script>
         // ثبت مکان: بعد از ذخیره به صفحه اصلی برمی‌گردیم
         async function saveLocation() {
-            const lat = parseFloat(document.getElementById('latInput').value);
-            const lng = parseFloat(document.getElementById('lngInput').value);
+            const pos = marker.getLatLng();
+            const lat = pos.lat, lng = pos.lng;
             const errEl = document.getElementById('locError');
             errEl.classList.add('hidden');
             try {
@@ -92,8 +82,8 @@
 
         function syncFields() {
             const pos = marker.getLatLng();
-            document.getElementById('latInput').value = pos.lat.toFixed(6);
-            document.getElementById('lngInput').value = pos.lng.toFixed(6);
+            document.querySelector('#locPicked b').textContent =
+                pos.lat.toFixed(5) + ', ' + pos.lng.toFixed(5);
         }
         syncFields();
 

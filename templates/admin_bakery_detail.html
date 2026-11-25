@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}جزئیات نانوایی — {{ bakery.name }}{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="/static/leaflet/leaflet.css">
+{% endblock %}
+
+{% block content %}
+<div class="admin-shell">
+    <aside class="admin-sidebar">
+        <div class="admin-brand">
+            <img src="/static/icons/icon-192.png" class="logo-icon" alt="">
+            <b>نانوبت</b>
+        </div>
+        <nav class="admin-side-nav">
+            <a href="/admin">📊 داشبورد</a>
+            <a href="/admin/bakeries" class="active">🏪 نانوایی‌ها</a>
+            <a href="/admin/customers">👥 مشتری‌ها</a>
+        </nav>
+        <a href="/admin/logout" class="admin-exit">🚪 خروج</a>
+    </aside>
+
+    <div class="admin-main">
+        <div class="admin-header">
+            <h1>🏪 {{ bakery.name }}</h1>
+            <a href="/admin/bakeries" class="btn-small">→ بازگشت به لیست</a>
+        </div>
+
+        <div class="panel" style="margin-bottom:1rem">
+            <h3 style="margin-bottom:0.8rem">اطلاعات نانوایی</h3>
+            <div class="detail-grid">
+                <div class="detail-item"><span class="detail-label">نام کاربری</span><span class="detail-value" dir="ltr">{{ bakery.username }}</span></div>
+                <div class="detail-item"><span class="detail-label">نوع</span><span class="detail-value">{{ 'سهمیه‌ای' if bakery.bakery_type=='share' else 'آزاد' }}</span></div>
+                <div class="detail-item"><span class="detail-label">وضعیت</span><span class="detail-value">{{ 'فعال ✅' if bakery.is_active else 'غیرفعال ⛔' }}</span></div>
+                <div class="detail-item"><span class="detail-label">ظرفیت روزانه</span><span class="detail-value">{{ bakery.daily_capacity }}</span></div>
+                <div class="detail-item"><span class="detail-label">قیمت نان</span><span class="detail-value">{{ bakery.price_per_loaf }} تومان</span></div>
+                <div class="detail-item"><span class="detail-label">قیمت کیسه</span><span class="detail-value">{{ bakery.price_per_bag }} تومان</span></div>
+                <div class="detail-item"><span class="detail-label">ساعت کاری</span><span class="detail-value" dir="ltr">{{ bakery.working_hours_start }} - {{ bakery.working_hours_end }}</span></div>
+                <div class="detail-item"><span class="detail-label">تلفن</span><span class="detail-value" dir="ltr">{{ bakery.phone or '—' }}</span></div>
+                <div class="detail-item span2"><span class="detail-label">آدرس</span><span class="detail-value">{{ bakery.address }}</span></div>
+                <div class="detail-item span2"><span class="detail-label">روزهای کاری</span><span class="detail-value" dir="ltr">{{ bakery.working_days }}</span></div>
+            </div>
+            <button class="btn-primary" style="margin-top:1rem" onclick="openMap()">🗺 مشاهده مکان روی نقشه</button>
+        </div>
+
+        <div class="panel">
+            <h3 style="margin-bottom:0.8rem">نوبت‌های این نانوایی <span class="muted">({{ total_res }} کل)</span></h3>
+            <table class="admin-table">
+                <tr><th>کد</th><th>شماره مشتری</th><th>نام</th><th>تاریخ</th><th>وضعیت</th></tr>
+                {% for r in reservations %}
+                <tr>
+                    <td dir="ltr">{{ r.code }}</td>
+                    <td dir="ltr">{{ r.user_phone }}</td>
+                    <td>{{ users_map.get(r.user_id, '—') }}</td>
+                    <td dir="ltr">{{ r.reservation_date }}</td>
+                    <td>{{ r.status }}</td>
+                </tr>
+                {% endfor %}
+                {% if not reservations %}
+                <tr><td colspan="5" class="muted">نوبتی ثبت نشده است.</td></tr>
+                {% endif %}
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- مودال نقشه -->
+<div id="mapModal" class="modal-overlay hidden" onclick="if(event.target===this)closeMap()">
+    <div class="modal-box" style="max-width:560px">
+        <button class="modal-close" onclick="closeMap()">✕</button>
+        <h3>مکان {{ bakery.name }}</h3>
+        <div id="bakeryMap" class="modal-map" dir="ltr"></div>
+        <p style="text-align:center;margin-top:0.5rem" dir="ltr">
+            {{ '%.5f'|format(bakery.latitude or 0) }}, {{ '%.5f'|format(bakery.longitude or 0) }}
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let dmap = null, dmarker = null;
+function openMap() {
+    document.getElementById('mapModal').classList.remove('hidden');
+    const lat = {{ bakery.latitude or 35.7448 }};
+    const lng = {{ bakery.longitude or 51.3753 }};
+    if (!dmap) {
+        dmap = L.map('bakeryMap').setView([lat, lng], 15);
+        L.tileLayer(window.TILE_URL || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+            { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(dmap);
+        dmarker = L.marker([lat, lng], {
+            icon: L.divIcon({ className: 'nb-marker', iconSize: [30, 30],
+                iconAnchor: [15, 28], html: '<div class="nb-marker-pin">📍</div>' })
+        }).addTo(dmap);
+    } else {
+        dmap.setView([lat, lng], 15);
+        dmarker.setLatLng([lat, lng]);
+    }
+    setTimeout(() => dmap.invalidateSize(), 150);
+}
+function closeMap() {
+    document.getElementById('mapModal').classList.add('hidden');
+}
+</script>
+<script src="/static/leaflet/leaflet.js"></script>
+{% endblock %}
