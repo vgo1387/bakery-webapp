@@ -1,9 +1,17 @@
 from datetime import date, datetime
 from flask import Blueprint, render_template, jsonify, request, session, redirect, url_for
-from models import db, Bakery, User, Reservation
+from models import db, Bakery, User, Reservation, Admin
 from seed import ADMIN_USERNAME, ADMIN_PASSWORD
 
 admin_bp = Blueprint('admin', __name__)
+
+
+def _admin_credentials():
+    """اعتبار مدیر از دیتابیس (اگر ثبت شده) وگرنه از مقدار پیش‌فرض"""
+    a = Admin.query.filter_by(username=ADMIN_USERNAME).first()
+    if a:
+        return a.username, a.password_hash, True  # (username, hash, is_hashed)
+    return ADMIN_USERNAME, ADMIN_PASSWORD, False
 
 
 @admin_bp.route('/admin/login', methods=['GET', 'POST'])
@@ -11,7 +19,13 @@ def login():
     if request.method == 'POST':
         username = (request.form.get('username') or '').strip()
         password = request.form.get('password') or ''
-        if username == ADMIN_USERNAME and password == ADMIN_PASSWORD:
+        uname, secret, is_hashed = _admin_credentials()
+        ok = (username == uname) and (
+            Admin.query.filter_by(username=username).first().check_password(password)
+            if is_hashed and username == uname
+            else password == secret
+        )
+        if ok:
             session['admin'] = True
             return redirect(url_for('admin.dashboard'))
         return render_template('admin_login.html', error='نام کاربری یا رمز عبور اشتباه است')
@@ -106,6 +120,38 @@ def customers_list():
         users=users,
         customers_json=json.dumps(customers_json, ensure_ascii=False),
     )
+
+
+# ---------- تنظیمات مدیر (تغییر رمز) ----------
+@admin_bp.route('/admin/settings', methods=['GET', 'POST'])
+def settings():
+    if not is_admin():
+        return redirect(url_for('admin.login'))
+    error = None
+    saved = False
+    admin_user = Admin.query.filter_by(username=ADMIN_USERNAME).first()
+    if request.method == 'POST':
+        current = request.form.get('current_password') or ''
+        new = request.form.get('new_password') or ''
+        confirm = request.form.get('confirm_password') or ''
+        if not admin_user:
+            admin_user = Admin(username=ADMIN_USERNAME)
+            admin_user.set_password(ADMIN_PASSWORD)
+            db.session.add(admin_user)
+            db.session.commit()
+        if not admin_user.check_password(current):
+            error = 'رمز فعلی اشتباه است'
+        elif len(new) < 6:
+            error = 'رمز جدید باید حداقل ۶ کاراکتر باشد'
+        elif new != confirm:
+            error = 'رمز جدید و تکرار آن یکسان نیستند'
+        else:
+            admin_user.set_password(new)
+            db.session.commit()
+            saved = True
+    return render_template('admin_settings.html', error=error, saved=saved)
+
+
 
 
 @admin_bp.route('/admin/customers/<int:user_id>/delete', methods=['POST'])
