@@ -542,7 +542,24 @@ a { color: inherit; }
 }
 .loc-card h1 { font-size: 1.3rem; margin-bottom: 0.6rem; }
 .loc-hint { font-size: 0.88rem; color: var(--text-light); margin-bottom: 1rem; line-height: 1.8; }
-.loc-map { height: 320px; border-radius: 12px; margin-bottom: 1rem; position: relative; z-index: 1; direction: ltr !important; overflow: hidden; }
+/* ارتفاع نقشه واکنش‌گرا: در لپ‌تاپ کوتاه‌تر تا همه‌چیز داخل صفحه جا شود */
+.loc-map {
+    height: clamp(260px, 42vh, 380px);
+    border-radius: 12px;
+    margin-bottom: 0.8rem;
+    position: relative;
+    z-index: 1;
+    direction: ltr !important;
+    overflow: hidden;
+}
+/* دکمه‌های GPS و تأیید کنار هم — در موبایل زیر هم */
+.loc-actions { display: flex; gap: 0.6rem; margin-top: 0.4rem; }
+.loc-actions .btn-primary,
+.loc-actions .btn-secondary { flex: 1; padding: 0.7rem 1rem; font-size: 0.95rem; }
+@media (max-width: 560px) {
+    .loc-actions { flex-direction: column; }
+}
+
 
 .loc-page { max-width: 640px; margin: 0 auto; }
 .loc-row { display: flex; gap: 0.8rem; }
