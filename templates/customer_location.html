@@ -10,10 +10,12 @@
         <div id="map" class="loc-map" dir="ltr"></div>
         <p id="locPicked" class="loc-picked">مکان انتخاب‌شده: <b dir="ltr">—</b></p>
 
-        <button id="btnGps" class="btn-secondary btn-block" style="margin-top:0.8rem"
-                onclick="useMyLocation()">📱 موقعیت من (GPS)</button>
-        <button id="btnSave" class="btn-primary btn-block" style="margin-top:0.6rem"
-                onclick="saveLocation()">✓ تأیید و ثبت مکان</button>
+        <div class="loc-actions">
+            <button id="btnGps" class="btn-secondary"
+                    onclick="useMyLocation()">📱 موقعیت من (GPS)</button>
+            <button id="btnSave" class="btn-primary"
+                    onclick="saveLocation()">✓ تأیید و ثبت مکان</button>
+        </div>
         <p id="locError" class="error-msg hidden"></p>
     </div>
 </div>
@@ -33,8 +35,8 @@
             .setView([35.7448, 51.3753], 13);
 
         var TILES = [
+            window.TILE_URL || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
             'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-            'https://tiles.stadiamaps.com/tiles/stadia_streets/{z}/{x}/{y}.png',
             'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
         ];
         var tileIndex = 0;
@@ -42,7 +44,9 @@
         function addTileLayer() {
             L.tileLayer(TILES[tileIndex], {
                 maxZoom: 19,
-                attribution: '\u00a9 OpenStreetMap \u00b7 \u00a9 Stadia Maps \u00b7 \u00a9 Esri'
+                detectRetina: false,
+                errorTileUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAPLtJgAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==',
+                attribution: '\u00a9 OpenStreetMap \u00b7 \u00a9 Esri'
             }).on('tileerror', function(e) {
                 tileIndex++;
                 if (tileIndex < TILES.length) {
@@ -55,6 +59,10 @@
             }).addTo(map);
         }
         addTileLayer();
+
+        // بعد از رندر کامل، اندازه نقشه را دوباره محاسبه کن تا کاشی‌ها درست جای‌گیری شوند
+        setTimeout(function() { if (map) map.invalidateSize(); }, 200);
+        window.addEventListener('resize', function() { if (map) map.invalidateSize(); });
 
         var iconOptions = {
             iconUrl: 'data:image/svg+xml;base64,' + btoa(
