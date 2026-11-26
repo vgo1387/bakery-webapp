@@ -33,9 +33,14 @@ def main():
         r = fresh_login(client, '09120000001')
         ok.append(('login by phone', r.status_code == 200 and r.get_json()['success']))
 
-        # 3) گرفتن نوبت برای فردا
+        # 3) گرفتن نوبت برای اولین روز کاری آینده (جمعه‌ها بسته است)
         from datetime import date, timedelta
-        target = (date.today() + timedelta(days=1)).isoformat()
+        target = None
+        for off in range(1, 8):
+            d = date.today() + timedelta(days=off)
+            if (d.weekday() + 2) % 7 != 6:  # 6 = جمعه در تقویم ایرانی
+                target = d.isoformat()
+                break
         r = client.post('/api/reservations', json={
             'bakeryId': 1, 'date': target, 'loafCount': 2, 'bagCount': 1, 'breadType': 'بربری'})
         ok.append(('create reservation', r.status_code == 201))
