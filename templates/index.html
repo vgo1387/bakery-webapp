@@ -2,7 +2,7 @@
 {% block title %}نانوایی‌ها | نانوبت{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='leaflet/leaflet.css') }}">
+<link rel="stylesheet" href="{{ static_v('leaflet/leaflet.css') }}">
 {% endblock %}
 
 {% block page_header %}
@@ -82,7 +82,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='leaflet/leaflet.js') }}"></script>
+<script src="{{ static_v('leaflet/leaflet.js') }}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         if (typeof initMapApp === 'function') initMapApp();

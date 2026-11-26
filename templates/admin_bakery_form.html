@@ -2,7 +2,7 @@
 {% block title %}{{ 'ویرایش نانوایی' if bakery else 'ثبت نانوایی جدید' }}{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="/static/leaflet/leaflet.css">
+<link rel="stylesheet" href="{{ static_v('leaflet/leaflet.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -88,7 +88,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/leaflet/leaflet.js"></script>
+<script src="{{ static_v('leaflet/leaflet.js') }}"></script>
 <script>
 (function () {
     const latInput = document.getElementById('latInput');

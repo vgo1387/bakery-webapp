@@ -2,7 +2,7 @@
 {% block title %}جزئیات نانوایی — {{ bakery.name }}{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="/static/leaflet/leaflet.css">
+<link rel="stylesheet" href="{{ static_v('leaflet/leaflet.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -101,5 +101,5 @@ function closeMap() {
     document.getElementById('mapModal').classList.add('hidden');
 }
 </script>
-<script src="/static/leaflet/leaflet.js"></script>
+<script src="{{ static_v('leaflet/leaflet.js') }}"></script>
 {% endblock %}

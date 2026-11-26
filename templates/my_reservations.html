@@ -2,7 +2,7 @@
 {% block title %}نوبت‌های من{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="/static/leaflet/leaflet.css">
+<link rel="stylesheet" href="{{ static_v('leaflet/leaflet.css') }}">
 {% endblock %}
 
 {% block page_header %}
@@ -49,7 +49,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/leaflet/leaflet.js"></script>
+<script src="{{ static_v('leaflet/leaflet.js') }}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', async function () {
     {% if user %}

@@ -2,7 +2,7 @@
 {% block title %}مدیریت مشتری‌ها{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="/static/leaflet/leaflet.css">
+<link rel="stylesheet" href="{{ static_v('leaflet/leaflet.css') }}">
 {% endblock %}
 
 {% block content %}
@@ -72,7 +72,7 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/static/leaflet/leaflet.js"></script>
+<script src="{{ static_v('leaflet/leaflet.js') }}"></script>
 <script>
 const custData = {{ customers_json|safe }};
 let custMap = null, custMarker = null;

@@ -37,6 +37,16 @@ def create_app():
     app.config['DEBUG'] = os.environ.get('FLASK_DEBUG', '0') == '1'
     db.init_app(app)
 
+    # cache-busting خودکار برای فایل‌های static: هر تغییر فایل → لینک جدید → مرورگر نسخه تازه می‌گیرد
+    @app.template_global()
+    def static_v(filename):
+        filepath = os.path.join(app.static_folder, filename.replace('/', os.sep))
+        try:
+            v = int(os.stat(filepath).st_mtime)
+        except OSError:
+            v = 0
+        return f'/static/{filename}?v={v}'
+
     with app.app_context():
         # مقداردهی اولیه دیتابیس (idempotent) — برای اجرا با gunicorn لازم است
         db.create_all()

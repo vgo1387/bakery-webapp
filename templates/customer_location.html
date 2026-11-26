@@ -2,7 +2,7 @@
 {% block title %}ثبت مکان{% endblock %}
 
 {% block head %}
-<link rel="stylesheet" href="/static/leaflet/leaflet.css">
+<link rel="stylesheet" href="{{ static_v('leaflet/leaflet.css') }}">
 {% endblock %}
 
 {% block page_header %}
@@ -64,7 +64,7 @@
             }
         }
     </script>
-    <script src="/static/leaflet/leaflet.js"></script>
+    <script src="{{ static_v('leaflet/leaflet.js') }}"></script>
     <script>
         // نقشه (نام‌ها یکتا تا با main.js تداخل نکنند)
         const locMap = L.map('map', { zoomControl: true }).setView([35.7448, 51.3753], 12);
