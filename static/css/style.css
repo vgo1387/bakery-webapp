@@ -542,7 +542,9 @@ a { color: inherit; }
 }
 .loc-card h1 { font-size: 1.3rem; margin-bottom: 0.6rem; }
 .loc-hint { font-size: 0.88rem; color: var(--text-light); margin-bottom: 1rem; line-height: 1.8; }
-.loc-map { height: 320px; border-radius: 12px; margin-bottom: 1rem; position: relative; z-index: 1; }
+.loc-map { height: 320px; border-radius: 12px; margin-bottom: 1rem; position: relative; z-index: 1; direction: ltr !important; overflow: hidden; }
+
+.loc-page { max-width: 640px; margin: 0 auto; }
 .loc-row { display: flex; gap: 0.8rem; }
 .loc-field { flex: 1; }
 .loc-field label { display: block; font-size: 0.8rem; color: var(--text-light); margin-bottom: 0.25rem; }
