@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+sms_log.txt
+.env
+venv/
+.venv/
+run.bat
