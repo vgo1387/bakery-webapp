@@ -683,3 +683,6 @@ a { color: inherit; }
 .code-disabled-box { margin-top: 1.2rem; opacity: 0.55; }
 .code-disabled-box .input { background: #f2f4f0; cursor: not-allowed; }
 .code-note { font-size: 0.75rem; color: var(--text-light); margin-top: 0.35rem; }
+
+/* ---------- Admin settings ---------- */
+.settings-ok { color: var(--success); font-weight: 700; background: #e6f9ec; border: 1px solid #b7e4c7; border-radius: 10px; padding: 0.55rem 0.9rem; margin-bottom: 0.8rem; }
