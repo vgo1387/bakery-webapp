@@ -35,6 +35,7 @@
                 <td>{{ b.daily_capacity }}</td>
                 <td>{{ 'فعال' if b.is_active else 'غیرفعال' }}</td>
                 <td class="table-actions">
+                    <a href="/admin/bakeries/{{ b.id }}" class="btn-small">جزئیات</a>
                     <a href="/admin/bakeries/{{ b.id }}/edit" class="btn-small">ویرایش</a>
                     <button class="btn-small toggle-btn" data-id="{{ b.id }}" data-active="{{ b.is_active|lower }}">
                         {{ 'غیرفعال' if b.is_active else 'فعال' }}
