@@ -1,29 +1,11 @@
 {% extends "base.html" %}
 {% block title %}ثبت مکان{% endblock %}
 
-{% block head %}
-<link rel="stylesheet" href="{{ static_v('leaflet/leaflet.css') }}">
-{% endblock %}
-
-{% block page_header %}
-<header class="mini-header">
-    <div class="mini-header-content">
-        <a href="/" class="logo"><img src="/static/icons/icon-192.png" class="logo-icon" alt="نانوبت"> نانوبت</a>
-        {% if has_location %}
-        <a href="/customer/settings" class="nav-link">→ تنظیمات</a>
-        {% endif %}
-    </div>
-</header>
-{% endblock %}
-
 {% block content %}
-    <div class="loc-page">
-        <div class="loc-card">
-            <h1>📍 ثبت مکان شما</h1>
-        <p class="loc-hint">
-            برای پیدا کردن نزدیک‌ترین نانوایی، موقعیت خود را ثبت کنید.
-            با کلیک روی نقشه یا استفاده از دکمه موقعیت من، مکان خود را مشخص کنید.
-        </p>
+<div class="loc-page">
+    <div class="loc-card">
+        <h1>📍 ثبت مکان شما</h1>
+        <p class="muted">برای پیدا کردن نانوایی‌های نزدیک، لطفاً موقعیت خود را روی نقشه مشخص کنید.</p>
 
         <div id="map" class="loc-map" dir="ltr"></div>
         <p id="locPicked" class="loc-picked">مکان انتخاب‌شده: <b dir="ltr">—</b></p>
@@ -33,75 +15,110 @@
         <button id="btnSave" class="btn-primary btn-block" style="margin-top:0.6rem"
                 onclick="saveLocation()">✓ تأیید و ثبت مکان</button>
         <p id="locError" class="error-msg hidden"></p>
-        </div>
     </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
-    <script>
-        // ثبت مکان: بعد از ذخیره به صفحه اصلی برمی‌گردیم
-        async function saveLocation() {
-            const pos = locMarker.getLatLng();
-            const lat = pos.lat, lng = pos.lng;
-            const errEl = document.getElementById('locError');
-            errEl.classList.add('hidden');
-            try {
-                const res = await fetch('/api/customer/location/save', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ latitude: lat, longitude: lng })
-                });
-                const data = await res.json();
-                if (data.success) {
-                    window.location.href = '/';
-                } else {
-                    errEl.textContent = data.error || 'خطا در ثبت مکان';
-                    errEl.classList.remove('hidden');
-                }
-            } catch (e) {
-                errEl.textContent = 'خطای شبکه';
+<script src="{{ static_v('leaflet/leaflet.js') }}" onerror="document.getElementById('locError').textContent='خطا در بارگذاری نقشه'; document.getElementById('locError').classList.remove('hidden')"></script>
+<script>
+(function() {
+    // ── اگر صفحه index باشد initMapApp اجرا نمی‌شود (چک بر اساس locMap) ──
+    var mapEl = document.getElementById('map');
+    if (!mapEl) { return; }
+
+    var map, marker;
+    try {
+        map = L.map('map', { zoomControl: true, attributionControl: true })
+            .setView([35.7448, 51.3753], 13);
+
+        L.tileLayer(
+            'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+            { maxZoom: 19, attribution: '\u00a9 OpenStreetMap' }
+        ).addTo(map);
+
+        var iconOptions = {
+            iconUrl: 'data:image/svg+xml;base64,' + btoa(
+                '<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 100 100\">' +
+                '<circle cx=\"50\" cy=\"50\" r=\"45\" fill=\"#dc3545\"/>' +
+                '<circle cx=\"50\" cy=\"38\" r=\"18\" fill=\"white\"/>' +
+                '<ellipse cx=\"50\" cy=\"78\" rx=\"16\" ry=\"8\" fill=\"white\" opacity=\".4\"/>' +
+                '</svg>'
+            ),
+            iconSize: [40, 52],
+            iconAnchor: [20, 52],
+            popupAnchor: [0, -52]
+        };
+        marker = L.marker([35.7448, 51.3753], { draggable: true, icon: L.icon(iconOptions) }).addTo(map);
+    } catch(e) {
+        document.getElementById('locError').textContent = 'خطا در بارگذاری نقشه: ' + (e.message || 'ناشناخته');
+        document.getElementById('locError').classList.remove('hidden');
+        return;
+    }
+
+    function syncFields() {
+        var pos = marker.getLatLng();
+        document.querySelector('#locPicked b').textContent = pos.lat.toFixed(5) + ', ' + pos.lng.toFixed(5);
+    }
+    syncFields();
+
+    marker.on('dragend', syncFields);
+    map.on('click', function(e) {
+        marker.setLatLng(e.latlng);
+        syncFields();
+    });
+
+    function useMyLocation() {
+        if (!navigator.geolocation) {
+            alert('مرورگر شما GPS را پشتیبانی نمی‌کند');
+            return;
+        }
+        navigator.geolocation.getCurrentPosition(
+            function(pos) {
+                var ll = [pos.coords.latitude, pos.coords.longitude];
+                map.setView(ll, 15);
+                marker.setLatLng(ll);
+                syncFields();
+            },
+            function(err) { alert('اجازه دسترسی به موقعیت داده نشد'); },
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
+    }
+
+    {% if user and user.latitude %}
+    try {
+        map.setView([{{ user.latitude }}, {{ user.longitude }}], 15);
+        marker.setLatLng([{{ user.latitude }}, {{ user.longitude }}]);
+        syncFields();
+    } catch(e) {}
+    {% endif %}
+
+    async function saveLocation() {
+        var pos = marker.getLatLng();
+        var errEl = document.getElementById('locError');
+        errEl.classList.add('hidden');
+        try {
+            var res = await fetch('/api/customer/location/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ latitude: pos.lat, longitude: pos.lng })
+            });
+            var data = await res.json();
+            if (data.success) {
+                window.location.href = '/';
+            } else {
+                errEl.textContent = data.error || 'خطا در ثبت مکان';
                 errEl.classList.remove('hidden');
             }
+        } catch(e) {
+            errEl.textContent = 'خطای شبکه';
+            errEl.classList.remove('hidden');
         }
-    </script>
-    <script src="{{ static_v('leaflet/leaflet.js') }}"></script>
-    <script>
-        // نقشه (نام‌ها یکتا تا با main.js تداخل نکنند)
-        const locMap = L.map('map', { zoomControl: true }).setView([35.7448, 51.3753], 12);
-        L.tileLayer(window.TILE_URL || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19, attribution: '&copy; OpenStreetMap'
-        }).addTo(locMap);
+    }
 
-        let locMarker = L.marker([35.7448, 51.3753], {
-            draggable: true,
-            icon: (window.pinIcon ? window.pinIcon(34) : undefined)
-        }).addTo(locMap);
-        locMarker.on('dragend', syncFields);
-        locMap.on('click', (e) => { locMarker.setLatLng(e.latlng); syncFields(); });
-
-        function syncFields() {
-            const pos = locMarker.getLatLng();
-            document.querySelector('#locPicked b').textContent =
-                pos.lat.toFixed(5) + ', ' + pos.lng.toFixed(5);
-        }
-        syncFields();
-
-        function useMyLocation() {
-            if (!navigator.geolocation) { alert('مرورگر شما GPS را پشتیبانی نمی‌کند'); return; }
-            navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                    const ll = [pos.coords.latitude, pos.coords.longitude];
-                    locMap.setView(ll, 15); locMarker.setLatLng(ll); syncFields();
-                },
-                (err) => alert('اجازه دسترسی به موقعیت داده نشد'),
-                { enableHighAccuracy: true, timeout: 10000 }
-            );
-        }
-        {% if user and user.latitude %}
-        // اگر مکان قبلی داره، نقشه همون‌جا باز بشه
-        locMap.setView([{{ user.latitude }}, {{ user.longitude }}], 15);
-        locMarker.setLatLng([{{ user.latitude }}, {{ user.longitude }}]);
-        syncFields();
-        {% endif %}
-    </script>
+    // make saveLocation globally available for onclick
+    window.saveLocation = saveLocation;
+    window.useMyLocation = useMyLocation;
+})();
+</script>
 {% endblock %}
