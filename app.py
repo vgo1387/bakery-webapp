@@ -68,6 +68,14 @@ def create_app():
         db.session.commit()
         from seed import seed_data
         seed_data()
+        # حساب مدیر در دیتابیس — تا رمز از پنل قابل تغییر باشد
+        from models import Admin
+        from seed import ADMIN_USERNAME, ADMIN_PASSWORD
+        if not Admin.query.filter_by(username=ADMIN_USERNAME).first():
+            a = Admin(username=ADMIN_USERNAME)
+            a.set_password(ADMIN_PASSWORD)
+            db.session.add(a)
+            db.session.commit()
         # بات‌ها: فعلاً خاموش — برای فعال‌سازی متغیر محیطی BOTS_ENABLED=1 را ست کنید
         try:
             import os as _os
