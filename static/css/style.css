@@ -544,6 +544,7 @@ a { color: inherit; }
 .loc-hint { font-size: 0.88rem; color: var(--text-light); margin-bottom: 1rem; line-height: 1.8; }
 /* ارتفاع نقشه واکنش‌گرا: در لپ‌تاپ کوتاه‌تر تا همه‌چیز داخل صفحه جا شود */
 .loc-map {
+    width: 100%;
     height: clamp(260px, 42vh, 380px);
     border-radius: 12px;
     margin-bottom: 0.8rem;
@@ -551,6 +552,7 @@ a { color: inherit; }
     z-index: 1;
     direction: ltr !important;
     overflow: hidden;
+    background: #e8f0e4;
 }
 /* دکمه‌های GPS و تأیید کنار هم — در موبایل زیر هم */
 .loc-actions { display: flex; gap: 0.6rem; margin-top: 0.4rem; }
