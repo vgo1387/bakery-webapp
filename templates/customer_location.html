@@ -1,6 +1,10 @@
 {% extends "base.html" %}
 {% block title %}ثبت مکان{% endblock %}
 
+{% block head %}
+<link rel="stylesheet" href="{{ static_v('leaflet/leaflet.css') }}">
+{% endblock %}
+
 {% block content %}
 <div class="loc-page">
     <div class="loc-card">
