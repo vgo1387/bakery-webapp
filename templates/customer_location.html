@@ -7,7 +7,7 @@
         <h1>📍 ثبت مکان شما</h1>
         <p class="muted">برای پیدا کردن نانوایی‌های نزدیک، لطفاً موقعیت خود را روی نقشه مشخص کنید.</p>
 
-        <div id="map" class="loc-map" dir="ltr"></div>
+        <div id="locMap" class="loc-map" dir="ltr"></div>
         <p id="locPicked" class="loc-picked">مکان انتخاب‌شده: <b dir="ltr">—</b></p>
 
         <div class="loc-actions">
@@ -26,12 +26,12 @@
 <script>
 (function() {
     // ── اگر صفحه index باشد initMapApp اجرا نمی‌شود (چک بر اساس locMap) ──
-    var mapEl = document.getElementById('map');
+    var mapEl = document.getElementById('locMap');
     if (!mapEl) { return; }
 
     var map, marker;
     try {
-        map = L.map('map', { zoomControl: true, attributionControl: true })
+        map = L.map('locMap', { zoomControl: true, attributionControl: true })
             .setView([35.7448, 51.3753], 13);
 
         var TILES = [
